@@ -32,28 +32,74 @@ class ChoirBookletApp:
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
     def setup_styles(self):
-        """Configura stili moderni per l'app"""
         style = ttk.Style()
-        style.theme_use('clam')
-        
-        # Colori
-        self.bg_color = "#f5f5f5"
-        self.accent_color = "#4a6fa5"
-        self.list_bg = "#ffffff"
-        self.selected_bg = "#e8f4f8"
-        
+        style.theme_use("clam")
+
+        self.bg_color = "#f7f9fc"
+        self.card_color = "#ffffff"
+        self.primary = "#2563eb"
+        self.primary_light = "#111827"
+        self.text_color = "#111827"
+        self.muted_text = "#6b7280"
+        self.border_color = "#e5e7eb"
+
+        # Generale
+        style.configure(".", 
+            background=self.bg_color,
+            foreground=self.text_color,
+            font=("Segoe UI", 10)
+        )
+
+        # Frame tipo "card"
+        style.configure("Card.TFrame",
+            background=self.card_color,
+            relief="flat"
+        )
+
+        # Titoli
+        style.configure("Title.TLabel",
+            font=("Segoe UI", 16, "bold"),
+            background=self.bg_color
+        )
+
+        style.configure("Header.TLabel",
+            font=("Segoe UI", 10, "bold"),
+            foreground=self.primary,
+            background=self.card_color
+        )
+
+        style.configure("Detail.TLabel",
+            background=self.card_color,
+            foreground=self.text_color
+        )
+
+        # Treeview moderno
         style.configure("Treeview",
-                       background=self.list_bg,
-                       foreground="black",
-                       rowheight=25,
-                       fieldbackground=self.list_bg)
-        style.map('Treeview', background=[('selected', self.selected_bg)])
-        
-        style.configure("TFrame", background=self.bg_color)
-        style.configure("TLabel", background=self.bg_color, font=('Segoe UI', 10))
-        style.configure("Title.TLabel", background=self.bg_color, font=('Segoe UI', 12, 'bold'))
-        style.configure("Header.TLabel", background=self.accent_color, foreground="white", font=('Segoe UI', 10, 'bold'))
-        style.configure("Detail.TLabel", background="#ffffff", font=('Segoe UI', 10))
+            background=self.card_color,
+            fieldbackground=self.card_color,
+            borderwidth=0,
+            rowheight=28
+        )
+
+        style.map("Treeview",
+            background=[("selected", self.primary_light)]
+        )
+
+        # Pulsanti
+        style.configure("Primary.TButton",
+            background=self.primary,
+            foreground="white",
+            padding=(14, 6),
+            borderwidth=0
+        )
+
+        style.map("Primary.TButton",
+            background=[("active", "#1d4ed8")]
+        )
+
+        style.configure("Secondary.TButton",
+            padding=(14, 6)
+        )
 
     def load_data(self):
         """Carica i dati dal file CSV"""
@@ -149,7 +195,7 @@ class ChoirBookletApp:
     def setup_ui(self):
         """Crea l'interfaccia utente"""
         # Frame principale
-        main_frame = ttk.Frame(self.root, padding="10")
+        main_frame = ttk.Frame(self.root, padding=20)
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         
         # Configura espansione
@@ -163,10 +209,11 @@ class ChoirBookletApp:
         title_label.grid(row=0, column=0, columnspan=2, pady=(0, 20))
         
         # Lista canti (sinistra)
-        list_frame = ttk.LabelFrame(main_frame, text="Elenco Canti (Ordine Alfabetico)", padding="10")
-        list_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=(0, 10))
+        list_frame = ttk.Frame(main_frame, style="Card.TFrame", padding=15)
+        list_frame.grid(row=1, column=0, sticky="nsew", padx=(0, 15))
         list_frame.columnconfigure(0, weight=1)
         list_frame.rowconfigure(0, weight=1)
+        ttk.Label(list_frame, text="Elenco Canti", style="Header.TLabel").grid(row=0, column=0, sticky="w", pady=(0, 10))
         
         # Treeview per la lista
         columns = ('title', 'stock')
@@ -196,8 +243,8 @@ class ChoirBookletApp:
         self.song_tree.bind('<<TreeviewSelect>>', self.on_song_select)
         
         # Dettaglio canto (destra)
-        detail_frame = ttk.LabelFrame(main_frame, text="Dettaglio Canto", padding="15")
-        detail_frame.grid(row=1, column=1, sticky=(tk.W, tk.E, tk.N, tk.S))
+        detail_frame = ttk.Frame(main_frame, style="Card.TFrame", padding=20)
+        detail_frame.grid(row=1, column=1, sticky="nsew")
         detail_frame.columnconfigure(1, weight=1)
         
         # Etichette e valori
@@ -220,9 +267,17 @@ class ChoirBookletApp:
         associated_frame.grid(row=3, column=1, sticky=(tk.W, tk.E, tk.N, tk.S), pady=5, padx=(10, 0))
         
         # Listbox per canti associati
-        self.associated_listbox = tk.Listbox(associated_frame, height=6, bg="white", 
-                                            relief="flat", highlightthickness=0,
-                                            font=('Segoe UI', 9))
+        self.associated_listbox = tk.Listbox(
+            associated_frame,
+            height=6,
+            bg=self.card_color,
+            fg=self.text_color,
+            selectbackground=self.primary_light,
+            relief="flat",
+            highlightthickness=1,
+            highlightbackground=self.border_color,
+            font=("Segoe UI", 9)
+        )
         self.associated_listbox.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         
         # Scrollbar per canti associati
@@ -237,9 +292,9 @@ class ChoirBookletApp:
         control_frame = ttk.Frame(detail_frame)
         control_frame.grid(row=4, column=0, columnspan=2, pady=20)
         
-        ttk.Button(control_frame, text="+ Stock", command=self.increment_stock).grid(row=0, column=0, padx=5)
-        ttk.Button(control_frame, text="- Stock", command=self.decrement_stock).grid(row=0, column=1, padx=5)
-        ttk.Button(control_frame, text="Aggiorna", command=self.update_stock).grid(row=0, column=2, padx=5)
+        ttk.Button(control_frame, text="+ Stock", style="Primary.TButton", command=self.increment_stock).grid(row=0, column=0, padx=6)
+        ttk.Button(control_frame, text="- Stock", style="Secondary.TButton", command=self.decrement_stock).grid(row=0, column=1, padx=6)
+        ttk.Button(control_frame, text="Aggiorna", style="Secondary.TButton", command=self.update_stock).grid(row=0, column=2, padx=6)
         
         # Info in basso
         info_frame = ttk.Frame(main_frame)
