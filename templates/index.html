@@ -35,11 +35,22 @@
 <div class="container container-table">
     <h1 class="title is-size-4">Gestione canti & libretti</h1>
 
-
-    <!-- Bottone per aprire il modal -->
-    <button class="button is-primary is-dark" id="show-add-modal" style="margin-bottom: 1rem;">
-        Aggiungi nuovo canto
-    </button>
+    <!-- Dopo l'h1 o vicino agli altri pulsanti -->
+    <div style="margin-bottom: 1rem; display: flex; gap: 10px;">
+        <button class="button is-primary is-dark" id="show-add-modal">
+            Aggiungi nuovo canto
+        </button>
+        
+        <!-- Nuovo pulsante per scaricare CSV -->
+        <button class="button is-info is-dark" id="download-csv">
+            Scarica CSV
+        </button>
+        
+        <!-- Pulsante backup (opzionale) -->
+        <button class="button is-warning is-dark" id="backup-csv">
+            Crea Backup
+        </button>
+    </div>
 
     <!-- Modal Aggiungi Nuovo Canto -->
     <div class="modal" id="add-modal">

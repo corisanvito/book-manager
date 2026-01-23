@@ -151,5 +151,90 @@ async function saveModalChanges() {
   loadSongs();
 }
 
+// Funzione per scaricare il CSV
+async function downloadCSV() {
+    try {
+        // Crea un link temporaneo
+        const response = await fetch('/api/download_csv');
+        
+        if (!response.ok) {
+            throw new Error('Errore nel download');
+        }
+        
+        // Crea blob dal contenuto
+        const blob = await response.blob();
+        
+        // Crea URL oggetto
+        const url = window.URL.createObjectURL(blob);
+        
+        // Crea link e simula click
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'canti_aggiornato.csv';
+        document.body.appendChild(a);
+        a.click();
+        
+        // Pulizia
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+    } catch (error) {
+        console.error('Errore download:', error);
+        alert('Errore durante il download del CSV');
+    }
+}
+
+// Funzione per backup
+async function createBackup() {
+    try {
+        const response = await fetch('/api/backup');
+        
+        if (!response.ok) {
+            throw new Error('Errore nel backup');
+        }
+        
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        
+        // Ottieni il nome del file dall'header
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let filename = 'canti_backup.csv';
+        
+        if (contentDisposition) {
+            const match = contentDisposition.match(/filename="(.+)"/);
+            if (match) {
+                filename = match[1];
+            }
+        }
+        
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+    } catch (error) {
+        console.error('Errore backup:', error);
+        alert('Errore durante la creazione del backup');
+    }
+}
+
+// Aggiungi event listener quando il DOM è caricato
+document.addEventListener('DOMContentLoaded', function() {
+    const downloadBtn = document.getElementById('download-csv');
+    const backupBtn = document.getElementById('backup-csv');
+    
+    if (downloadBtn) {
+        downloadBtn.addEventListener('click', downloadCSV);
+    }
+    
+    if (backupBtn) {
+        backupBtn.addEventListener('click', createBackup);
+    }
+});
+
 // Inizializzazione
 loadSongs();

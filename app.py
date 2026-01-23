@@ -1,6 +1,7 @@
-from flask import Flask, render_template, jsonify, request, send_from_directory
+from flask import Flask, render_template, jsonify, request, send_from_directory, send_file, make_response
 import csv
 import os
+import io
 
 app = Flask(__name__)
 
@@ -89,10 +90,71 @@ def update_booklet():
     save_songs(songs)
     return jsonify({'ok': True})
 
+
+@app.route('/api/download_csv')
+def download_csv():
+    """
+    Endpoint per scaricare il file CSV aggiornato
+    """
+    try:
+        # Crea un file in memoria
+        csv_data = io.StringIO()
+        
+        # Carica i dati
+        songs = load_songs()
+        
+        # Scrivi l'header
+        fieldnames = ['title', 'booklet_number', 'associated', 'stock']
+        writer = csv.DictWriter(csv_data, fieldnames=fieldnames, delimiter=';')
+        writer.writeheader()
+        
+        # Scrivi i dati
+        for song in songs:
+            writer.writerow({
+                'title': song['title'],
+                'booklet_number': song['booklet_number'],
+                'associated': song['associated'],
+                'stock': song['stock']
+            })
+        
+        # Prepara la risposta per il download
+        output = make_response(csv_data.getvalue())
+        output.headers["Content-Disposition"] = "attachment; filename=canti_aggiornato.csv"
+        output.headers["Content-type"] = "text/csv; charset=utf-8"
+        
+        return output
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# Endpoint per il backup automatico
+@app.route('/api/backup')
+def create_backup():
+    """
+    Crea un backup con timestamp nel nome
+    """
+    import datetime
+    
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"canti_backup_{timestamp}.csv"
+    
+    # Copia il file CSV
+    with open(CSV_FILE, 'r', encoding='utf-8') as source:
+        content = source.read()
+    
+    output = make_response(content)
+    output.headers["Content-Disposition"] = f"attachment; filename={filename}"
+    output.headers["Content-type"] = "text/csv; charset=utf-8"
+    
+    return output
+
+
 # Per file statici
 @app.route('/static/<path:path>')
 def serve_static(path):
     return send_from_directory('static', path)
+
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
