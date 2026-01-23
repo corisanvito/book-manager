@@ -46,7 +46,6 @@ function renderSongs(filterText = '') {
       <td>${song.title}</td>
       <td>${song.booklet_number || '-'}</td>
       <td class="${stockClass}">${song.stock}</td>
-      <td>${song.associated ? `<span title="${song.associated.replace(/;/g, ', ')}">🛈</span>` : '-'}</td>
       <td>
         <button class="button is-small is-success button-stock is-dark" onclick="updateStock('${song.title}', ${song.stock + 1})">+</button>
         <button class="button is-small is-danger button-stock is-dark" onclick="updateStock('${song.title}', ${song.stock - 1})">−</button>
@@ -170,7 +169,7 @@ async function downloadCSV() {
         // Crea link e simula click
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'canti_aggiornato.csv';
+        a.download = 'canti.csv';
         document.body.appendChild(a);
         a.click();
         
@@ -200,7 +199,7 @@ async function createBackup() {
         
         // Ottieni il nome del file dall'header
         const contentDisposition = response.headers.get('Content-Disposition');
-        let filename = 'canti_backup.csv';
+        let filename = 'canti.csv';
         
         if (contentDisposition) {
             const match = contentDisposition.match(/filename="(.+)"/);

@@ -35,18 +35,15 @@
 <div class="container container-table">
     <h1 class="title is-size-4">Gestione canti & libretti</h1>
 
-    <!-- Dopo l'h1 o vicino agli altri pulsanti -->
     <div style="margin-bottom: 1rem; display: flex; gap: 10px;">
         <button class="button is-primary is-dark" id="show-add-modal">
             Aggiungi nuovo canto
         </button>
         
-        <!-- Nuovo pulsante per scaricare CSV -->
         <button class="button is-info is-dark" id="download-csv">
             Scarica CSV
         </button>
         
-        <!-- Pulsante backup (opzionale) -->
         <button class="button is-warning is-dark" id="backup-csv">
             Crea Backup
         </button>
@@ -104,7 +101,6 @@
             <th data-sort="title">Titolo ⬍</th>
             <th data-sort="booklet_number">Libretto ⬍</th>
             <th data-sort="stock">Stock ⬍</th>
-            <th>Canti associati</th>
             <th>Azioni</th>
         </tr>
         </thead>
@@ -124,7 +120,13 @@
                 <div class="field">
                     <label class="label">Numero Libretto</label>
                     <div class="control">
-                    <input class="input" type="text" id="modal-booklet">
+                        <input class="input" type="text" id="modal-booklet">
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label">Canti Associati (separati da ;)</label>
+                    <div class="control">
+                        <input class="input" type="text" id="modal-associated-input" placeholder="Canto1; Canto2">
                     </div>
                 </div>
                 <p><strong>Stock:</strong> <span id="modal-stock"></span></p>
