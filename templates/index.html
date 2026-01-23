@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestione Canti - Coro delle Dieci</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css">
+    <style>
+        .container-table {
+            max-width: 900px;
+            margin: auto;
+        }
+        table th, table td {
+            font-size: 1.1rem;
+        }
+        .stock-low {
+            background-color: #fee2e2;
+        }
+        .stock-high {
+            background-color: #d1fae5;
+        }
+        .button-stock {
+            padding: 0.5rem 0.8rem;
+            font-size: 1rem;
+        }
+        input.filter-input {
+            margin-bottom: 1rem;
+        }
+        .add-form {
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body class="section">
+
+<div class="container container-table">
+    <h1 class="title is-size-4">Gestione canti & libretti</h1>
+
+
+    <!-- Bottone per aprire il modal -->
+    <button class="button is-primary is-dark" id="show-add-modal" style="margin-bottom: 1rem;">
+        Aggiungi nuovo canto
+    </button>
+
+    <!-- Modal Aggiungi Nuovo Canto -->
+    <div class="modal" id="add-modal">
+        <div class="modal-background"></div>
+        <div class="modal-card">
+            <header class="modal-card-head">
+                <p class="modal-card-title">Aggiungi Nuovo Canto</p>
+                <button class="delete" aria-label="close" onclick="closeAddModal()"></button>
+            </header>
+            <section class="modal-card-body">
+                <div class="field">
+                    <label class="label">Titolo</label>
+                    <div class="control">
+                        <input class="input" type="text" id="new-title" placeholder="Titolo del canto">
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label">Numero Libretto</label>
+                    <div class="control">
+                        <input class="input" type="text" id="new-booklet" placeholder="Numero libretto">
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label">Canti Associati (separati da ;)</label>
+                    <div class="control">
+                        <input class="input" type="text" id="new-associated" placeholder="Canto1; Canto2">
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label">Stock iniziale</label>
+                    <div class="control">
+                        <input class="input" type="number" id="new-stock" value="0">
+                    </div>
+                </div>
+            </section>
+            <footer class="modal-card-foot">
+                <button class="button is-success is-dark" onclick="addSong()">Aggiungi</button>
+                <button class="button is-warning is-dark" style="margin-left: 1rem;" onclick="closeAddModal()">Chiudi</button>
+            </footer>
+        </div>
+    </div>
+
+
+    <!-- Filtro -->
+    <input type="text" id="search" class="input filter-input" placeholder="Cerca titolo...">
+
+    <table class="table is-fullwidth is-striped is-hoverable" id="songs-table">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th data-sort="title">Titolo ⬍</th>
+            <th data-sort="booklet_number">Libretto ⬍</th>
+            <th data-sort="stock">Stock ⬍</th>
+            <th>Canti associati</th>
+            <th>Azioni</th>
+        </tr>
+        </thead>
+        <tbody id="songs"></tbody>
+    </table>
+    </div>
+
+    <!-- Modal dettagli -->
+    <div class="modal" id="detail-modal">
+        <div class="modal-background"></div>
+        <div class="modal-card">
+            <header class="modal-card-head">
+            <p class="modal-card-title" id="modal-title">Dettagli Canto</p>
+            <button class="delete" aria-label="close" onclick="closeModal()"></button>
+            </header>
+            <section class="modal-card-body" id="modal-body">
+                <div class="field">
+                    <label class="label">Numero Libretto</label>
+                    <div class="control">
+                    <input class="input" type="text" id="modal-booklet">
+                    </div>
+                </div>
+                <p><strong>Stock:</strong> <span id="modal-stock"></span></p>
+                <p><strong>Canti associati:</strong> <span id="modal-associated"></span></p>
+            </section>
+            <footer class="modal-card-foot">
+                <button class="button is-success is-dark" onclick="saveModalChanges()">Salva modifiche</button>
+                <button class="button is-warning is-dark" style="margin-left: 1rem;" onclick="closeModal()">Chiudi</button>
+            </footer>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
