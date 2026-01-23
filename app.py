@@ -1,23 +1,30 @@
-# app.py
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, send_from_directory
 import csv
+import os
 
 app = Flask(__name__)
-CSV_FILE = 'canti.csv'
+
+# Configurazione per Render
+if 'RENDER' in os.environ:
+    CSV_FILE = os.path.join(os.getcwd(), 'canti.csv')
+else:
+    CSV_FILE = 'canti.csv'
 
 
 def load_songs():
     songs = []
-    with open(CSV_FILE, newline='', encoding='utf-8') as f:
-        reader = csv.DictReader(f, delimiter=';')
-        for row in reader:
-            songs.append({
-                'title': row.get('title', '').strip(),
-                'booklet_number': row.get('booklet_number', '').strip(),
-                'associated': row.get('associated', '').strip(),
-                'stock': int(row.get('stock', '0') or 0)
-            })
-    songs.sort(key=lambda x: x['title'].lower())
+    try:
+        with open(CSV_FILE, newline='', encoding='utf-8') as f:
+            reader = csv.DictReader(f, delimiter=';')
+            for row in reader:
+                songs.append({
+                    'title': row.get('title', '').strip(),
+                    'booklet_number': row.get('booklet_number', '').strip(),
+                    'associated': row.get('associated', '').strip(),
+                    'stock': int(row.get('stock', '0') or 0)
+                })
+    except FileNotFoundError:
+        songs = []
     return songs
 
 
@@ -56,7 +63,7 @@ def update_stock():
 def add_song():
     data = request.json
     songs = load_songs()
-
+    
     new_song = {
         'title': data['title'],
         'booklet_number': data.get('booklet_number', ''),
@@ -73,7 +80,7 @@ def update_booklet():
     data = request.json
     title = data['title']
     new_booklet = data.get('booklet_number', '')
-
+    
     songs = load_songs()
     for song in songs:
         if song['title'] == title:
@@ -82,8 +89,11 @@ def update_booklet():
     save_songs(songs)
     return jsonify({'ok': True})
 
-
+# Per file statici
+@app.route('/static/<path:path>')
+def serve_static(path):
+    return send_from_directory('static', path)
 
 if __name__ == '__main__':
-    #app.run(debug=True) # per vedere solo da pc
-    app.run(debug=True, host="0.0.0.0", port=5000) # per vedere da qualsiasi altro dispositivo all'interno della rete
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
