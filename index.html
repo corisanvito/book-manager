@@ -646,7 +646,7 @@
      FIREBASE SDK
 ═══════════════════════════════════════════════ -->
     <script type="module">
-        import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
         import {
             getFirestore, collection, getDocs,
             doc, addDoc, updateDoc, deleteDoc, writeBatch, setDoc
@@ -667,7 +667,7 @@
                 projectId: document.getElementById('cfg-projectId').value.trim(),
                 appId: document.getElementById('cfg-appId').value.trim(),
             };
-            if (!cfg.apiKey || !cfg.projectId) {alert('Inserisci almeno API Key e Project ID.'); return;}
+            if (!cfg.apiKey || !cfg.projectId) { alert('Inserisci almeno API Key e Project ID.'); return; }
             localStorage.setItem('fbConfig', JSON.stringify(cfg));
             initFirebase(cfg);
         };
@@ -702,7 +702,7 @@
             showState('loading');
             try {
                 const snap = await getDocs(collection(db, 'canti'));
-                songs = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                songs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 refreshStats();
                 refreshAssocFilter();
                 renderTable();
@@ -718,19 +718,19 @@
             const booklet = document.getElementById('f-booklet').value.trim();
             const assoc = document.getElementById('f-assoc').value.trim();
             const stock = parseInt(document.getElementById('f-stock').value) || 0;
-            if (!title) {alert('Il titolo è obbligatorio.'); return;}
+            if (!title) { alert('Il titolo è obbligatorio.'); return; }
 
             const btn = document.getElementById('btn-save-song');
             btn.disabled = true;
             try {
                 if (editingId) {
-                    await updateDoc(doc(db, 'canti', editingId), {title, booklet_number: booklet, associated: assoc, stock});
+                    await updateDoc(doc(db, 'canti', editingId), { title, booklet_number: booklet, associated: assoc, stock });
                     const i = songs.findIndex(s => s.id === editingId);
-                    if (i >= 0) songs[i] = {id: editingId, title, booklet_number: booklet, associated: assoc, stock};
+                    if (i >= 0) songs[i] = { id: editingId, title, booklet_number: booklet, associated: assoc, stock };
                     toast('Canto aggiornato');
                 } else {
-                    const ref = await addDoc(collection(db, 'canti'), {title, booklet_number: booklet, associated: assoc, stock});
-                    songs.push({id: ref.id, title, booklet_number: booklet, associated: assoc, stock});
+                    const ref = await addDoc(collection(db, 'canti'), { title, booklet_number: booklet, associated: assoc, stock });
+                    songs.push({ id: ref.id, title, booklet_number: booklet, associated: assoc, stock });
                     toast('Canto aggiunto');
                 }
                 closeSongModal();
@@ -760,7 +760,7 @@
         window.saveStock = async function (id, val) {
             const stock = parseInt(val) || 0;
             try {
-                await updateDoc(doc(db, 'canti', id), {stock});
+                await updateDoc(doc(db, 'canti', id), { stock });
                 const s = songs.find(s => s.id === id);
                 if (s) s.stock = stock;
                 refreshStats();
@@ -780,7 +780,7 @@
             document.getElementById('import-preview').textContent = '';
             document.getElementById('btn-import').disabled = true;
             document.getElementById('modal-import').classList.add('open');
-            document.getElementById('f-csv').addEventListener('change', handleCSVFile, {once: true});
+            document.getElementById('f-csv').addEventListener('change', handleCSVFile, { once: true });
         };
         window.closeImportModal = (e) => {
             if (e && e.target !== document.getElementById('modal-import')) return;
@@ -792,15 +792,24 @@
             if (!file) return;
             const reader = new FileReader();
             reader.onload = ev => {
-                const lines = ev.target.result.split('\n').map(l => l.trim()).filter(Boolean);
+                // rimuove BOM eventuale
+                const raw = ev.target.result.replace(/^\uFEFF/, '');
+                const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
                 const headers = lines[0].split(';').map(h => h.trim().toLowerCase());
+                // supporta sia "title" che "titolo"
+                const col = name => {
+                    const aliases = { title: ['title', 'titolo'], booklet_number: ['booklet_number', 'numero', 'libretto'], associated: ['associated', 'associazione'], stock: ['stock', 'scorta'] };
+                    const idx = (aliases[name] || [name]).map(a => headers.indexOf(a)).find(i => i >= 0);
+                    return idx ?? -1;
+                };
                 csvRows = lines.slice(1).map(l => {
                     const cols = l.split(';');
+                    const title = col('title') >= 0 ? (cols[col('title')] || '').trim() : '';
                     return {
-                        title: (cols[headers.indexOf('title')] || '').trim(),
-                        booklet_number: (cols[headers.indexOf('booklet_number')] || '').trim(),
-                        associated: (cols[headers.indexOf('associated')] || '').trim(),
-                        stock: parseInt(cols[headers.indexOf('stock')] || '0') || 0,
+                        title,
+                        booklet_number: col('booklet_number') >= 0 ? (cols[col('booklet_number')] || '').trim() : '',
+                        associated: col('associated') >= 0 ? (cols[col('associated')] || '').trim() : '',
+                        stock: parseInt(col('stock') >= 0 ? cols[col('stock')] || '0' : '0') || 0,
                     };
                 }).filter(r => r.title);
                 document.getElementById('import-preview').textContent =
@@ -851,7 +860,7 @@
             const rows = songs.map(s =>
                 [s.title, s.booklet_number || '', s.associated || '', s.stock || 0].join(';')
             );
-            const blob = new Blob([header + '\n' + rows.join('\n')], {type: 'text/csv;charset=utf-8;'});
+            const blob = new Blob([header + '\n' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url; a.download = 'canti_' + ts() + '.csv'; a.click();
@@ -876,8 +885,8 @@
 
             filtered.sort((a, b) => {
                 let va = a[sortCol] ?? '', vb = b[sortCol] ?? '';
-                if (sortCol === 'stock') {va = +va; vb = +vb;}
-                else {va = String(va).toLowerCase(); vb = String(vb).toLowerCase();}
+                if (sortCol === 'stock') { va = +va; vb = +vb; }
+                else { va = String(va).toLowerCase(); vb = String(vb).toLowerCase(); }
                 return va < vb ? -sortDir : va > vb ? sortDir : 0;
             });
 
@@ -917,7 +926,7 @@
             inp.type = 'number'; inp.min = 0; inp.value = current;
             inp.className = 'stock-input';
             inp.onblur = () => saveStock(id, inp.value);
-            inp.onkeydown = e => {if (e.key === 'Enter') inp.blur(); if (e.key === 'Escape') renderTable();};
+            inp.onkeydown = e => { if (e.key === 'Enter') inp.blur(); if (e.key === 'Escape') renderTable(); };
             el.replaceWith(inp);
             inp.focus(); inp.select();
         };
@@ -965,7 +974,7 @@
         ═══════════════════════════════════════════ */
         window.sortBy = function (col) {
             if (sortCol === col) sortDir *= -1;
-            else {sortCol = col; sortDir = 1;}
+            else { sortCol = col; sortDir = 1; }
             document.querySelectorAll('th').forEach(t => t.classList.remove('sorted'));
             document.getElementById('th-' + col)?.classList.add('sorted');
             renderTable();
