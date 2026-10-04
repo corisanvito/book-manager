@@ -3,25 +3,8 @@
     "public": ".",
     "ignore": [
       "firebase.json",
-      "migrate-csv-to-firestore.mjs",
-      "serviceAccountKey.json",
-      "*.csv",
-      "node_modules",
-      "LEGGIMI.md"
-    ],
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
-    ],
-    "headers": [
-      {
-        "source": "**",
-        "headers": [
-          { "key": "Cache-Control", "value": "no-cache" }
-        ]
-      }
+      "**/.*",
+      "**/node_modules/**"
     ]
   }
 }
