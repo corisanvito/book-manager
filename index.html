@@ -1,89 +1,1026 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Welcome to Firebase Hosting</title>
+<html lang="it">
 
-    <!-- update the version number as needed -->
-    <script defer src="/__/firebase/12.19.0/firebase-app-compat.js"></script>
-    <!-- include only the Firebase features as you need -->
-    <script defer src="/__/firebase/12.19.0/firebase-auth-compat.js"></script>
-    <script defer src="/__/firebase/12.19.0/firebase-database-compat.js"></script>
-    <script defer src="/__/firebase/12.19.0/firebase-firestore-compat.js"></script>
-    <script defer src="/__/firebase/12.19.0/firebase-functions-compat.js"></script>
-    <script defer src="/__/firebase/12.19.0/firebase-messaging-compat.js"></script>
-    <script defer src="/__/firebase/12.19.0/firebase-storage-compat.js"></script>
-    <script defer src="/__/firebase/12.19.0/firebase-analytics-compat.js"></script>
-    <script defer src="/__/firebase/12.19.0/firebase-remote-config-compat.js"></script>
-    <script defer src="/__/firebase/12.19.0/firebase-performance-compat.js"></script>
-    <!-- 
-      initialize the SDK after all desired features are loaded, set useEmulator to false
-      to avoid connecting the SDK to running emulators.
-    -->
-    <script defer src="/__/firebase/init.js?useEmulator=true"></script>
-
-    <style media="screen">
-      body { background: #ECEFF1; color: rgba(0,0,0,0.87); font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
-      #message { background: white; max-width: 360px; margin: 100px auto 16px; padding: 32px 24px; border-radius: 3px; }
-      #message h2 { color: #ffa100; font-weight: bold; font-size: 16px; margin: 0 0 8px; }
-      #message h1 { font-size: 22px; font-weight: 300; color: rgba(0,0,0,0.6); margin: 0 0 16px;}
-      #message p { line-height: 140%; margin: 16px 0 24px; font-size: 14px; }
-      #message a { display: block; text-align: center; background: #039be5; text-transform: uppercase; text-decoration: none; color: white; padding: 16px; border-radius: 4px; }
-      #message, #message a { box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); }
-      #load { color: rgba(0,0,0,0.4); text-align: center; font-size: 13px; }
-      @media (max-width: 600px) {
-        body, #message { margin-top: 0; background: white; box-shadow: none; }
-        body { border-top: 16px solid #ffa100; }
-      }
-    </style>
-  </head>
-  <body>
-    <div id="message">
-      <h2>Welcome</h2>
-      <h1>Firebase Hosting Setup Complete</h1>
-      <p>You're seeing this because you've successfully setup Firebase Hosting. Now it's time to go build something extraordinary!</p>
-      <a target="_blank" href="https://firebase.google.com/docs/hosting/">Open Hosting Documentation</a>
-    </div>
-    <p id="load">Firebase SDK Loading&hellip;</p>
-
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        const loadEl = document.querySelector('#load');
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
-        // // The Firebase SDK is initialized and available here!
-        //
-        // firebase.auth().onAuthStateChanged(user => { });
-        // firebase.database().ref('/path/to/ref').on('value', snapshot => { });
-        // firebase.firestore().doc('/foo/bar').get().then(() => { });
-        // firebase.functions().httpsCallable('yourFunction')().then(() => { });
-        // firebase.messaging().requestPermission().then(() => { });
-        // firebase.storage().ref('/path/to/ref').getDownloadURL().then(() => { });
-        // firebase.analytics(); // call to activate
-        // firebase.analytics().logEvent('tutorial_completed');
-        // firebase.performance(); // call to activate
-        //
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
-
-        try {
-          let app = firebase.app();
-          let features = [
-            'auth', 
-            'database', 
-            'firestore',
-            'functions',
-            'messaging', 
-            'storage', 
-            'analytics', 
-            'remoteConfig',
-            'performance',
-          ].filter(feature => typeof app[feature] === 'function');
-          loadEl.textContent = `Firebase SDK loaded with ${features.join(', ')}`;
-        } catch (e) {
-          console.error(e);
-          loadEl.textContent = 'Error loading the Firebase SDK, check the console.';
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Book Manager – Cori San Vito</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
-      });
+
+        :root {
+            --bg: #f7f8fa;
+            --surface: #ffffff;
+            --border: #e4e7ec;
+            --text: #1a1d23;
+            --muted: #6b7280;
+            --accent: #2563eb;
+            --accent-h: #1d4ed8;
+            --danger: #dc2626;
+            --green: #16a34a;
+            --radius: 10px;
+            --shadow: 0 1px 3px rgba(0, 0, 0, .08), 0 1px 2px rgba(0, 0, 0, .06);
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* ── TOP BAR ── */
+        header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 0 24px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-weight: 600;
+            font-size: 15px;
+            letter-spacing: -.01em;
+        }
+
+        .logo span {
+            color: var(--accent);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        /* ── LAYOUT ── */
+        main {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 24px 16px 80px;
+        }
+
+        /* ── TOOLBAR ── */
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .search-wrap {
+            flex: 1;
+            min-width: 180px;
+            position: relative;
+        }
+
+        .search-wrap input {
+            width: 100%;
+            padding: 8px 12px 8px 36px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--surface);
+            font: inherit;
+            outline: none;
+            transition: border-color .15s;
+        }
+
+        .search-wrap input:focus {
+            border-color: var(--accent);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 11px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--muted);
+            pointer-events: none;
+        }
+
+        /* ── BUTTONS ── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            border: none;
+            border-radius: var(--radius);
+            font: inherit;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background .15s, opacity .15s;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-h);
+        }
+
+        .btn-outline {
+            background: var(--surface);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-outline:hover {
+            background: var(--bg);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--muted);
+            padding: 6px 8px;
+        }
+
+        .btn-ghost:hover {
+            color: var(--text);
+            background: var(--bg);
+        }
+
+        .btn-danger {
+            background: #fee2e2;
+            color: var(--danger);
+        }
+
+        .btn-danger:hover {
+            background: #fecaca;
+        }
+
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        .btn:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+
+        /* ── STATS BAR ── */
+        .stats-bar {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .stat {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 12px 18px;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .stat-val {
+            font-size: 22px;
+            font-weight: 600;
+        }
+
+        .stat-lbl {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        /* ── TABLE ── */
+        .table-wrap {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: var(--bg);
+            text-align: left;
+            padding: 10px 14px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        th:hover {
+            color: var(--text);
+        }
+
+        th.sorted {
+            color: var(--accent);
+        }
+
+        td {
+            padding: 11px 14px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: #f9fafb;
+        }
+
+        .col-title {
+            width: 38%;
+        }
+
+        .col-booklet {
+            width: 12%;
+            text-align: center;
+        }
+
+        .col-assoc {
+            width: 20%;
+        }
+
+        .col-stock {
+            width: 14%;
+            text-align: center;
+        }
+
+        .col-actions {
+            width: 16%;
+            text-align: right;
+        }
+
+        /* stock pill */
+        .stock-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 600;
+        }
+
+        .stock-pill.low {
+            color: var(--danger);
+        }
+
+        .stock-pill.ok {
+            color: var(--green);
+        }
+
+        .stock-pill.zero {
+            color: var(--muted);
+        }
+
+        /* inline stock edit */
+        .stock-input {
+            width: 64px;
+            padding: 4px 8px;
+            border: 1px solid var(--accent);
+            border-radius: 6px;
+            font: inherit;
+            font-weight: 600;
+            text-align: center;
+            outline: none;
+        }
+
+        /* ── EMPTY / LOADING ── */
+        .empty {
+            text-align: center;
+            padding: 60px 24px;
+            color: var(--muted);
+        }
+
+        .empty svg {
+            margin-bottom: 12px;
+            opacity: .4;
+        }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin .7s linear infinite;
+            margin: 60px auto;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ── MODAL ── */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .35);
+            backdrop-filter: blur(2px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .2s;
+        }
+
+        .overlay.open {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal {
+            background: var(--surface);
+            border-radius: 14px;
+            padding: 28px;
+            width: 100%;
+            max-width: 440px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, .18);
+            transform: translateY(12px);
+            transition: transform .2s;
+        }
+
+        .overlay.open .modal {
+            transform: translateY(0);
+        }
+
+        .modal-title {
+            font-size: 17px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .field {
+            margin-bottom: 16px;
+        }
+
+        .field label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        .field input,
+        .field select {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font: inherit;
+            outline: none;
+            transition: border-color .15s;
+        }
+
+        .field input:focus,
+        .field select:focus {
+            border-color: var(--accent);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            margin-top: 24px;
+        }
+
+        /* ── TOAST ── */
+        #toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: #1a1d23;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 500;
+            transition: transform .25s cubic-bezier(.22, .68, 0, 1.2);
+            z-index: 999;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        #toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ── CONFIG SCREEN ── */
+        #config-screen {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 300;
+        }
+
+        .config-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 36px;
+            width: 100%;
+            max-width: 460px;
+            box-shadow: var(--shadow);
+        }
+
+        .config-box h2 {
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+
+        .config-box p {
+            color: var(--muted);
+            margin-bottom: 24px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .config-box .field input {
+            font-size: 13px;
+            font-family: monospace;
+        }
+
+        .config-note {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 8px;
+        }
+
+        @media (max-width: 600px) {
+
+            .col-assoc,
+            .col-booklet {
+                display: none;
+            }
+
+            .col-title {
+                width: 50%;
+            }
+
+            .col-stock {
+                width: 25%;
+            }
+
+            .col-actions {
+                width: 25%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ════════════════════════════════════════════
+     CONFIG SCREEN (shown once if no config saved)
+═══════════════════════════════════════════════ -->
+    <div id="config-screen">
+        <div class="config-box">
+            <h2>Configurazione Firebase</h2>
+            <p>
+                Incolla qui le credenziali del tuo progetto Firebase.<br>
+                Vengono salvate solo nel browser (localStorage) e non vengono inviate da nessuna parte.
+            </p>
+            <div class="field">
+                <label>API Key</label>
+                <input id="cfg-apiKey" type="text" placeholder="AIzaSy..." />
+            </div>
+            <div class="field">
+                <label>Auth Domain</label>
+                <input id="cfg-authDomain" type="text" placeholder="il-tuo-progetto.firebaseapp.com" />
+            </div>
+            <div class="field">
+                <label>Project ID</label>
+                <input id="cfg-projectId" type="text" placeholder="il-tuo-progetto" />
+            </div>
+            <div class="field">
+                <label>App ID</label>
+                <input id="cfg-appId" type="text" placeholder="1:123456789:web:abc..." />
+            </div>
+            <p class="config-note">
+                Trovi questi valori in <strong>Firebase Console → Impostazioni progetto → Le tue app → SDK setup and
+                    configuration</strong>.
+            </p>
+            <div style="display:flex;gap:8px;margin-top:20px;">
+                <button class="btn btn-primary" onclick="saveConfig()" style="flex:1">Salva e continua</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════
+     APP
+═══════════════════════════════════════════════ -->
+    <header>
+        <div class="logo">Cori San Vito <span>/ Libretti</span></div>
+        <div class="header-actions">
+            <button class="btn btn-outline btn-sm" onclick="downloadCSV()">⬇ CSV</button>
+            <button class="btn btn-outline btn-sm" onclick="openImportModal()">⬆ Importa CSV</button>
+            <button class="btn btn-primary btn-sm" onclick="openAddModal()">+ Aggiungi</button>
+        </div>
+    </header>
+
+    <main>
+        <div class="stats-bar">
+            <div class="stat">
+                <div class="stat-val" id="stat-total">—</div>
+                <div class="stat-lbl">Canti totali</div>
+            </div>
+            <div class="stat">
+                <div class="stat-val" id="stat-stock">—</div>
+                <div class="stat-lbl">Libretti in magazzino</div>
+            </div>
+            <div class="stat">
+                <div class="stat-val" id="stat-low" style="color:var(--danger)">—</div>
+                <div class="stat-lbl">Scorte basse (≤ 2)</div>
+            </div>
+        </div>
+
+        <div class="toolbar">
+            <div class="search-wrap">
+                <svg class="search-icon" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"
+                    viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <input id="search" type="search" placeholder="Cerca per titolo, libretto o associazione…"
+                    oninput="renderTable()" />
+            </div>
+            <select id="filter-assoc" class="btn btn-outline" onchange="renderTable()" style="padding:8px 12px;">
+                <option value="">Tutte le associazioni</option>
+            </select>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="col-title" onclick="sortBy('title')" id="th-title">Titolo</th>
+                        <th class="col-booklet" onclick="sortBy('booklet_number')" id="th-booklet">N° lib.</th>
+                        <th class="col-assoc" onclick="sortBy('associated')" id="th-assoc">Associazione</th>
+                        <th class="col-stock" onclick="sortBy('stock')" id="th-stock">Scorta</th>
+                        <th class="col-actions"></th>
+                    </tr>
+                </thead>
+                <tbody id="tbody"></tbody>
+            </table>
+            <div id="table-state">
+                <div class="spinner"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ── MODAL: Aggiungi / Modifica ── -->
+    <div class="overlay" id="modal-song" onclick="closeSongModal(event)">
+        <div class="modal">
+            <div class="modal-title" id="modal-song-title">Aggiungi canto</div>
+            <div class="field"><label>Titolo *</label><input id="f-title" type="text" /></div>
+            <div class="field"><label>N° libretto</label><input id="f-booklet" type="text" /></div>
+            <div class="field"><label>Associazione</label><input id="f-assoc" type="text" /></div>
+            <div class="field"><label>Scorta iniziale</label><input id="f-stock" type="number" min="0" value="0" />
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" onclick="closeSongModal()">Annulla</button>
+                <button class="btn btn-primary" id="btn-save-song" onclick="saveSong()">Salva</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── MODAL: Importa CSV ── -->
+    <div class="overlay" id="modal-import" onclick="closeImportModal(event)">
+        <div class="modal">
+            <div class="modal-title">Importa CSV</div>
+            <p style="color:var(--muted);font-size:13px;margin-bottom:16px;">
+                Il CSV deve avere il separatore <code>;</code> e le colonne:<br>
+                <code>title; booklet_number; associated; stock</code><br><br>
+                <strong>L'importazione aggiunge i canti che non esistono già</strong> (confronto per titolo). I
+                duplicati vengono saltati.
+            </p>
+            <div class="field"><label>File CSV</label><input id="f-csv" type="file" accept=".csv" /></div>
+            <div id="import-preview" style="font-size:12px;color:var(--muted);margin-top:8px;"></div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" onclick="closeImportModal()">Annulla</button>
+                <button class="btn btn-primary" id="btn-import" onclick="doImport()" disabled>Importa</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── TOAST ── -->
+    <div id="toast"></div>
+
+    <!-- ════════════════════════════════════════════
+     FIREBASE SDK
+═══════════════════════════════════════════════ -->
+    <script type="module">
+        import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+        import {
+            getFirestore, collection, getDocs,
+            doc, addDoc, updateDoc, deleteDoc, writeBatch, setDoc
+        } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+        /* ── STATE ── */
+        let db, songs = [], editingId = null;
+        let sortCol = 'title', sortDir = 1;
+        let csvRows = [];
+
+        /* ══════════════════════════════════════════
+           CONFIG / INIT
+        ═══════════════════════════════════════════ */
+        window.saveConfig = function () {
+            const cfg = {
+                apiKey: document.getElementById('cfg-apiKey').value.trim(),
+                authDomain: document.getElementById('cfg-authDomain').value.trim(),
+                projectId: document.getElementById('cfg-projectId').value.trim(),
+                appId: document.getElementById('cfg-appId').value.trim(),
+            };
+            if (!cfg.apiKey || !cfg.projectId) {alert('Inserisci almeno API Key e Project ID.'); return;}
+            localStorage.setItem('fbConfig', JSON.stringify(cfg));
+            initFirebase(cfg);
+        };
+
+        function initFirebase(cfg) {
+            try {
+                const app = initializeApp(cfg);
+                db = getFirestore(app);
+                document.getElementById('config-screen').style.display = 'none';
+                loadSongs();
+            } catch (e) {
+                alert('Errore Firebase: ' + e.message);
+            }
+        }
+
+        // Auto-init from saved config
+        const saved = localStorage.getItem('fbConfig');
+        if (saved) {
+            const cfg = JSON.parse(saved);
+            // pre-fill config fields too (for when user clicks "reset config")
+            document.getElementById('cfg-apiKey').value = cfg.apiKey || '';
+            document.getElementById('cfg-authDomain').value = cfg.authDomain || '';
+            document.getElementById('cfg-projectId').value = cfg.projectId || '';
+            document.getElementById('cfg-appId').value = cfg.appId || '';
+            initFirebase(cfg);
+        }
+
+        /* ══════════════════════════════════════════
+           FIRESTORE CRUD
+        ═══════════════════════════════════════════ */
+        async function loadSongs() {
+            showState('loading');
+            try {
+                const snap = await getDocs(collection(db, 'canti'));
+                songs = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                refreshStats();
+                refreshAssocFilter();
+                renderTable();
+                showState('');
+            } catch (e) {
+                showState('error');
+                toast('Errore caricamento: ' + e.message, 4000);
+            }
+        }
+
+        window.saveSong = async function () {
+            const title = document.getElementById('f-title').value.trim();
+            const booklet = document.getElementById('f-booklet').value.trim();
+            const assoc = document.getElementById('f-assoc').value.trim();
+            const stock = parseInt(document.getElementById('f-stock').value) || 0;
+            if (!title) {alert('Il titolo è obbligatorio.'); return;}
+
+            const btn = document.getElementById('btn-save-song');
+            btn.disabled = true;
+            try {
+                if (editingId) {
+                    await updateDoc(doc(db, 'canti', editingId), {title, booklet_number: booklet, associated: assoc, stock});
+                    const i = songs.findIndex(s => s.id === editingId);
+                    if (i >= 0) songs[i] = {id: editingId, title, booklet_number: booklet, associated: assoc, stock};
+                    toast('Canto aggiornato');
+                } else {
+                    const ref = await addDoc(collection(db, 'canti'), {title, booklet_number: booklet, associated: assoc, stock});
+                    songs.push({id: ref.id, title, booklet_number: booklet, associated: assoc, stock});
+                    toast('Canto aggiunto');
+                }
+                closeSongModal();
+                refreshStats();
+                refreshAssocFilter();
+                renderTable();
+            } catch (e) {
+                toast('Errore: ' + e.message, 4000);
+            }
+            btn.disabled = false;
+        };
+
+        window.deleteSong = async function (id, title) {
+            if (!confirm(`Eliminare "${title}"?`)) return;
+            try {
+                await deleteDoc(doc(db, 'canti', id));
+                songs = songs.filter(s => s.id !== id);
+                refreshStats();
+                refreshAssocFilter();
+                renderTable();
+                toast('Canto eliminato');
+            } catch (e) {
+                toast('Errore: ' + e.message, 4000);
+            }
+        };
+
+        window.saveStock = async function (id, val) {
+            const stock = parseInt(val) || 0;
+            try {
+                await updateDoc(doc(db, 'canti', id), {stock});
+                const s = songs.find(s => s.id === id);
+                if (s) s.stock = stock;
+                refreshStats();
+                renderTable();
+                toast('Scorta salvata');
+            } catch (e) {
+                toast('Errore: ' + e.message, 4000);
+            }
+        };
+
+        /* ══════════════════════════════════════════
+           IMPORT CSV
+        ═══════════════════════════════════════════ */
+        window.openImportModal = () => {
+            csvRows = [];
+            document.getElementById('f-csv').value = '';
+            document.getElementById('import-preview').textContent = '';
+            document.getElementById('btn-import').disabled = true;
+            document.getElementById('modal-import').classList.add('open');
+            document.getElementById('f-csv').addEventListener('change', handleCSVFile, {once: true});
+        };
+        window.closeImportModal = (e) => {
+            if (e && e.target !== document.getElementById('modal-import')) return;
+            document.getElementById('modal-import').classList.remove('open');
+        };
+
+        function handleCSVFile(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = ev => {
+                const lines = ev.target.result.split('\n').map(l => l.trim()).filter(Boolean);
+                const headers = lines[0].split(';').map(h => h.trim().toLowerCase());
+                csvRows = lines.slice(1).map(l => {
+                    const cols = l.split(';');
+                    return {
+                        title: (cols[headers.indexOf('title')] || '').trim(),
+                        booklet_number: (cols[headers.indexOf('booklet_number')] || '').trim(),
+                        associated: (cols[headers.indexOf('associated')] || '').trim(),
+                        stock: parseInt(cols[headers.indexOf('stock')] || '0') || 0,
+                    };
+                }).filter(r => r.title);
+                document.getElementById('import-preview').textContent =
+                    `${csvRows.length} righe trovate.`;
+                document.getElementById('btn-import').disabled = csvRows.length === 0;
+            };
+            reader.readAsText(file, 'utf-8');
+        }
+
+        window.doImport = async function () {
+            const btn = document.getElementById('btn-import');
+            btn.disabled = true;
+            btn.textContent = 'Importando…';
+            const existingTitles = new Set(songs.map(s => s.title.toLowerCase()));
+            const toAdd = csvRows.filter(r => !existingTitles.has(r.title.toLowerCase()));
+
+            if (toAdd.length === 0) {
+                toast('Nessun canto nuovo da aggiungere.', 3000);
+                btn.textContent = 'Importa';
+                return;
+            }
+
+            try {
+                // Batch writes (max 500 per batch)
+                for (let i = 0; i < toAdd.length; i += 500) {
+                    const batch = writeBatch(db);
+                    toAdd.slice(i, i + 500).forEach(song => {
+                        const ref = doc(collection(db, 'canti'));
+                        batch.set(ref, song);
+                    });
+                    await batch.commit();
+                }
+                await loadSongs();
+                closeImportModal();
+                toast(`${toAdd.length} canti importati!`);
+            } catch (e) {
+                toast('Errore import: ' + e.message, 4000);
+            }
+            btn.disabled = false;
+            btn.textContent = 'Importa';
+        };
+
+        /* ══════════════════════════════════════════
+           EXPORT CSV
+        ═══════════════════════════════════════════ */
+        window.downloadCSV = function () {
+            const header = 'title;booklet_number;associated;stock';
+            const rows = songs.map(s =>
+                [s.title, s.booklet_number || '', s.associated || '', s.stock || 0].join(';')
+            );
+            const blob = new Blob([header + '\n' + rows.join('\n')], {type: 'text/csv;charset=utf-8;'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'canti_' + ts() + '.csv'; a.click();
+            URL.revokeObjectURL(url);
+            toast('CSV scaricato');
+        };
+
+        /* ══════════════════════════════════════════
+           RENDER TABLE
+        ═══════════════════════════════════════════ */
+        window.renderTable = function () {
+            const q = document.getElementById('search').value.toLowerCase();
+            const fa = document.getElementById('filter-assoc').value;
+
+            let filtered = songs.filter(s => {
+                const match = !q || s.title.toLowerCase().includes(q)
+                    || (s.booklet_number || '').toLowerCase().includes(q)
+                    || (s.associated || '').toLowerCase().includes(q);
+                const assocMatch = !fa || s.associated === fa;
+                return match && assocMatch;
+            });
+
+            filtered.sort((a, b) => {
+                let va = a[sortCol] ?? '', vb = b[sortCol] ?? '';
+                if (sortCol === 'stock') {va = +va; vb = +vb;}
+                else {va = String(va).toLowerCase(); vb = String(vb).toLowerCase();}
+                return va < vb ? -sortDir : va > vb ? sortDir : 0;
+            });
+
+            const tbody = document.getElementById('tbody');
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5"><div class="empty">
+        <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 0 1 0 10h-2m-7-5h8"/>
+        </svg>
+        <div>Nessun canto trovato</div></div></td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(s => {
+                const st = s.stock || 0;
+                const cls = st === 0 ? 'zero' : st <= 2 ? 'low' : 'ok';
+                return `<tr>
+        <td class="col-title" style="font-weight:500">${esc(s.title)}</td>
+        <td class="col-booklet" style="color:var(--muted)">${esc(s.booklet_number || '—')}</td>
+        <td class="col-assoc" style="color:var(--muted)">${esc(s.associated || '—')}</td>
+        <td class="col-stock">
+          <span class="stock-pill ${cls}" id="stock-display-${s.id}">${st}</span>
+        </td>
+        <td class="col-actions">
+          <button class="btn btn-ghost btn-sm" onclick="editStock('${s.id}', ${st})" title="Modifica scorta">±</button>
+          <button class="btn btn-ghost btn-sm" onclick="openEditModal('${s.id}')" title="Modifica">✏️</button>
+          <button class="btn btn-ghost btn-sm" onclick="deleteSong('${s.id}', '${esc(s.title).replace(/'/g, "\\'")}')">🗑️</button>
+        </td>
+      </tr>`;
+            }).join('');
+        };
+
+        window.editStock = function (id, current) {
+            const el = document.getElementById('stock-display-' + id);
+            if (!el) return;
+            const inp = document.createElement('input');
+            inp.type = 'number'; inp.min = 0; inp.value = current;
+            inp.className = 'stock-input';
+            inp.onblur = () => saveStock(id, inp.value);
+            inp.onkeydown = e => {if (e.key === 'Enter') inp.blur(); if (e.key === 'Escape') renderTable();};
+            el.replaceWith(inp);
+            inp.focus(); inp.select();
+        };
+
+        /* ══════════════════════════════════════════
+           MODALS
+        ═══════════════════════════════════════════ */
+        window.openAddModal = () => {
+            editingId = null;
+            document.getElementById('modal-song-title').textContent = 'Aggiungi canto';
+            ['f-title', 'f-booklet', 'f-assoc'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('f-stock').value = 0;
+            document.getElementById('modal-song').classList.add('open');
+            document.getElementById('f-title').focus();
+        };
+
+        window.openEditModal = (id) => {
+            const s = songs.find(s => s.id === id);
+            if (!s) return;
+            editingId = id;
+            document.getElementById('modal-song-title').textContent = 'Modifica canto';
+            document.getElementById('f-title').value = s.title || '';
+            document.getElementById('f-booklet').value = s.booklet_number || '';
+            document.getElementById('f-assoc').value = s.associated || '';
+            document.getElementById('f-stock').value = s.stock || 0;
+            document.getElementById('modal-song').classList.add('open');
+            document.getElementById('f-title').focus();
+        };
+
+        window.closeSongModal = (e) => {
+            if (e && e.target !== document.getElementById('modal-song')) return;
+            document.getElementById('modal-song').classList.remove('open');
+        };
+
+        // Keyboard close
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                document.getElementById('modal-song').classList.remove('open');
+                document.getElementById('modal-import').classList.remove('open');
+            }
+        });
+
+        /* ══════════════════════════════════════════
+           SORT
+        ═══════════════════════════════════════════ */
+        window.sortBy = function (col) {
+            if (sortCol === col) sortDir *= -1;
+            else {sortCol = col; sortDir = 1;}
+            document.querySelectorAll('th').forEach(t => t.classList.remove('sorted'));
+            document.getElementById('th-' + col)?.classList.add('sorted');
+            renderTable();
+        };
+
+        /* ══════════════════════════════════════════
+           HELPERS
+        ═══════════════════════════════════════════ */
+        function refreshStats() {
+            document.getElementById('stat-total').textContent = songs.length;
+            const total = songs.reduce((a, s) => a + (s.stock || 0), 0);
+            const low = songs.filter(s => (s.stock || 0) <= 2).length;
+            document.getElementById('stat-stock').textContent = total;
+            document.getElementById('stat-low').textContent = low;
+        }
+
+        function refreshAssocFilter() {
+            const sel = document.getElementById('filter-assoc');
+            const cur = sel.value;
+            const opts = [...new Set(songs.map(s => s.associated).filter(Boolean))].sort();
+            sel.innerHTML = '<option value="">Tutte le associazioni</option>' +
+                opts.map(o => `<option value="${esc(o)}" ${o === cur ? 'selected' : ''}>${esc(o)}</option>`).join('');
+        }
+
+        function showState(state) {
+            const el = document.getElementById('table-state');
+            if (state === 'loading') {
+                el.innerHTML = '<div class="spinner"></div>';
+                el.style.display = 'block';
+            } else if (state === 'error') {
+                el.innerHTML = '<div class="empty">Errore nel caricamento dei dati. Controlla la configurazione Firebase.</div>';
+                el.style.display = 'block';
+            } else {
+                el.style.display = 'none';
+            }
+        }
+
+        let toastTimer;
+        window.toast = function (msg, dur = 2200) {
+            const el = document.getElementById('toast');
+            el.textContent = msg;
+            el.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => el.classList.remove('show'), dur);
+        };
+
+        function esc(s) {
+            return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function ts() {
+            return new Date().toISOString().slice(0, 16).replace('T', '_').replace(':', '');
+        }
     </script>
-  </body>
+
+</body>
+
 </html>
