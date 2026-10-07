@@ -7,6 +7,7 @@
     <title>Book Manager – Cori San Vito</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -418,8 +419,8 @@
         </td>
         <td class="col-actions">
           <button class="btn btn-ghost btn-sm" onclick="editStock('${s.id}', ${st})" title="Modifica scorta">±</button>
-          <button class="btn btn-ghost btn-sm" onclick="openEditModal('${s.id}')" title="Modifica">✏️</button>
-          <button class="btn btn-ghost btn-sm" onclick="deleteSong('${s.id}', '${esc(s.title).replace(/'/g, "\\'")}')">🗑️</button>
+          <button class="btn btn-ghost btn-sm" onclick="openEditModal('${s.id}')" title="Modifica"><i class="fa-solid fa-pencil"></i></button>
+          <button class="btn btn-ghost btn-sm" onclick="deleteSong('${s.id}', '${esc(s.title).replace(/'/g, "\\'")}')"><i class="fa-solid fa-trash"></i></button>
         </td>
       </tr>`;
             }).join('');
