@@ -14,8 +14,8 @@
 <body>
 
     <!-- ════════════════════════════════════════════
-     CONFIG SCREEN (shown once if no config saved)
-═══════════════════════════════════════════════ -->
+         CONFIG SCREEN
+    ═══════════════════════════════════════════════ -->
     <div id="config-screen">
         <div class="config-box">
             <h2>Configurazione Firebase</h2>
@@ -50,14 +50,17 @@
     </div>
 
     <!-- ════════════════════════════════════════════
-     APP
-═══════════════════════════════════════════════ -->
+         APP
+    ═══════════════════════════════════════════════ -->
     <header>
         <div class="logo">Cori San Vito <span>/ Libretti</span></div>
         <div class="header-actions">
+            <button class="btn btn-outline btn-sm" onclick="openLibrettiModal()">
+                <i class="fa-solid fa-book-open"></i> Libretti
+            </button>
             <button class="btn btn-outline btn-sm" onclick="downloadCSV()">⬇ CSV</button>
             <button class="btn btn-outline btn-sm" onclick="openImportModal()">⬆ Importa CSV</button>
-            <button class="btn btn-primary btn-sm" onclick="openAddModal()">+ Aggiungi</button>
+            <button class="btn btn-primary btn-sm" onclick="openAddModal()">+ Aggiungi canto</button>
         </div>
     </header>
 
@@ -69,11 +72,11 @@
             </div>
             <div class="stat">
                 <div class="stat-val" id="stat-stock">—</div>
-                <div class="stat-lbl">Libretti in magazzino</div>
+                <div class="stat-lbl">Copie in magazzino</div>
             </div>
             <div class="stat">
                 <div class="stat-val" id="stat-low" style="color:var(--danger)">—</div>
-                <div class="stat-lbl">Scorte basse (≤ 2)</div>
+                <div class="stat-lbl">Libretti esauriti/bassi (≤ 2)</div>
             </div>
         </div>
 
@@ -96,10 +99,10 @@
             <table>
                 <thead>
                     <tr>
-                        <th class="col-title" onclick="sortBy('title')" id="th-title">Titolo</th>
-                        <th class="col-booklet" onclick="sortBy('booklet_number')" id="th-booklet">N° lib.</th>
-                        <th class="col-assoc" onclick="sortBy('associated')" id="th-assoc">Associazione</th>
-                        <th class="col-stock" onclick="sortBy('stock')" id="th-stock">Scorta</th>
+                        <th class="col-title"   onclick="sortBy('title')"          id="th-title">Titolo</th>
+                        <th class="col-booklet" onclick="sortBy('booklet_number')" id="th-booklet">Libretto</th>
+                        <th class="col-assoc"   onclick="sortBy('associated')"     id="th-assoc">Associazione</th>
+                        <th class="col-stock"   onclick="sortBy('stock')"          id="th-stock">Scorta</th>
                         <th class="col-actions"></th>
                     </tr>
                 </thead>
@@ -111,18 +114,56 @@
         </div>
     </main>
 
-    <!-- ── MODAL: Aggiungi / Modifica ── -->
+    <!-- ── MODAL: Aggiungi / Modifica canto ── -->
     <div class="overlay" id="modal-song" onclick="closeSongModal(event)">
         <div class="modal">
             <div class="modal-title" id="modal-song-title">Aggiungi canto</div>
             <div class="field"><label>Titolo *</label><input id="f-title" type="text" /></div>
-            <div class="field"><label>N° libretto</label><input id="f-booklet" type="text" /></div>
-            <div class="field"><label>Associazione</label><input id="f-assoc" type="text" /></div>
-            <div class="field"><label>Scorta iniziale</label><input id="f-stock" type="number" min="0" value="0" />
+            <div class="field">
+                <label>Libretto</label>
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <select id="f-libretto"
+                        style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:14px;background:var(--surface,#fff);color:var(--text,#111);">
+                        <option value="">— Nessun libretto —</option>
+                    </select>
+                    <button class="btn btn-outline btn-sm" onclick="openLibrettoModalFromSong()" type="button">+ Nuovo</button>
+                </div>
             </div>
             <div class="modal-actions">
                 <button class="btn btn-outline" onclick="closeSongModal()">Annulla</button>
                 <button class="btn btn-primary" id="btn-save-song" onclick="saveSong()">Salva</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── MODAL: Lista libretti ── -->
+    <div class="overlay" id="modal-libretti" onclick="closeLibrettiModal(event)">
+        <div class="modal" style="width:min(720px,95vw);max-height:85vh;display:flex;flex-direction:column;">
+            <div class="modal-title"
+                style="display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+                <span>Gestisci libretti</span>
+                <button class="btn btn-primary btn-sm" onclick="openLibrettoModal(null, false)">+ Aggiungi</button>
+            </div>
+            <div id="libretti-table-wrap" style="overflow-y:auto;flex:1;margin-top:12px;"></div>
+            <div class="modal-actions" style="flex-shrink:0;margin-top:12px;">
+                <button class="btn btn-outline" onclick="closeLibrettiModal()">Chiudi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── MODAL: Aggiungi / Modifica singolo libretto ── -->
+    <div class="overlay" id="modal-libretto" onclick="closeLibrettoModal(event)">
+        <div class="modal">
+            <div class="modal-title" id="modal-libretto-title">Aggiungi libretto</div>
+            <div class="field">
+                <label>Numero / Nome *</label>
+                <input id="fl-number" type="text" placeholder="es. L01 oppure «Avvento 2024»" />
+            </div>
+            <div class="field"><label>Associazione</label><input id="fl-assoc" type="text" /></div>
+            <div class="field"><label>Scorta</label><input id="fl-stock" type="number" min="0" value="0" /></div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" onclick="closeLibrettoModal()">Annulla</button>
+                <button class="btn btn-primary" id="btn-save-libretto" onclick="saveLibretto()">Salva</button>
             </div>
         </div>
     </div>
@@ -134,8 +175,9 @@
             <p style="color:var(--muted);font-size:13px;margin-bottom:16px;">
                 Il CSV deve avere il separatore <code>;</code> e le colonne:<br>
                 <code>title; booklet_number; associated; stock</code><br><br>
-                <strong>L'importazione aggiunge i canti che non esistono già</strong> (confronto per titolo). I
-                duplicati vengono saltati.
+                Per ogni combinazione unica di <em>booklet_number + associated</em> viene creato
+                (o riutilizzato) un libretto. <strong>I canti già esistenti vengono saltati</strong>
+                (confronto per titolo).
             </p>
             <div class="field"><label>File CSV</label><input id="f-csv" type="file" accept=".csv" /></div>
             <div id="import-preview" style="font-size:12px;color:var(--muted);margin-top:8px;"></div>
@@ -150,29 +192,40 @@
     <div id="toast"></div>
 
     <!-- ════════════════════════════════════════════
-     FIREBASE SDK
-═══════════════════════════════════════════════ -->
+         FIREBASE SDK
+    ═══════════════════════════════════════════════ -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
         import {
-            getFirestore, collection, getDocs,
-            doc, addDoc, updateDoc, deleteDoc, writeBatch, setDoc
+            getFirestore, collection, getDocs, doc, addDoc, updateDoc,
+            deleteDoc, writeBatch, deleteField
         } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-        /* ── STATE ── */
-        let db, songs = [], editingId = null;
+        /* ──────────────────────────────────────────
+           STATE
+           - songs    : { id, title, libretto_id }
+           - libretti : { id, number, associated, stock }
+           La scorta NON è sul canto; è sul libretto.
+           Più canti sullo stesso libretto condividono la stessa scorta.
+        ────────────────────────────────────────── */
+        let db;
+        let songs    = [];
+        let libretti = [];
+        let editingId          = null;
+        let editingLibrettoId  = null;
+        let librettoFromSong   = false;
         let sortCol = 'title', sortDir = 1;
         let csvRows = [];
 
-        /* ══════════════════════════════════════════
+        /* ──────────────────────────────────────────
            CONFIG / INIT
-        ═══════════════════════════════════════════ */
+        ────────────────────────────────────────── */
         window.saveConfig = function () {
             const cfg = {
-                apiKey: document.getElementById('cfg-apiKey').value.trim(),
+                apiKey:     document.getElementById('cfg-apiKey').value.trim(),
                 authDomain: document.getElementById('cfg-authDomain').value.trim(),
-                projectId: document.getElementById('cfg-projectId').value.trim(),
-                appId: document.getElementById('cfg-appId').value.trim(),
+                projectId:  document.getElementById('cfg-projectId').value.trim(),
+                appId:      document.getElementById('cfg-appId').value.trim(),
             };
             if (!cfg.apiKey || !cfg.projectId) { alert('Inserisci almeno API Key e Project ID.'); return; }
             localStorage.setItem('fbConfig', JSON.stringify(cfg));
@@ -184,32 +237,35 @@
                 const app = initializeApp(cfg);
                 db = getFirestore(app);
                 document.getElementById('config-screen').style.display = 'none';
-                loadSongs();
+                loadAll();
             } catch (e) {
                 alert('Errore Firebase: ' + e.message);
             }
         }
 
-        // Auto-init from saved config
         const saved = localStorage.getItem('fbConfig');
         if (saved) {
             const cfg = JSON.parse(saved);
-            // pre-fill config fields too (for when user clicks "reset config")
-            document.getElementById('cfg-apiKey').value = cfg.apiKey || '';
+            document.getElementById('cfg-apiKey').value     = cfg.apiKey     || '';
             document.getElementById('cfg-authDomain').value = cfg.authDomain || '';
-            document.getElementById('cfg-projectId').value = cfg.projectId || '';
-            document.getElementById('cfg-appId').value = cfg.appId || '';
+            document.getElementById('cfg-projectId').value  = cfg.projectId  || '';
+            document.getElementById('cfg-appId').value      = cfg.appId      || '';
             initFirebase(cfg);
         }
 
-        /* ══════════════════════════════════════════
-           FIRESTORE CRUD
-        ═══════════════════════════════════════════ */
-        async function loadSongs() {
+        /* ──────────────────────────────────────────
+           CARICAMENTO
+        ────────────────────────────────────────── */
+        async function loadAll() {
             showState('loading');
             try {
-                const snap = await getDocs(collection(db, 'canti'));
-                songs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                const [cantiSnap, librettiSnap] = await Promise.all([
+                    getDocs(collection(db, 'canti')),
+                    getDocs(collection(db, 'libretti')),
+                ]);
+                libretti = librettiSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                songs    = cantiSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                await migrateIfNeeded();
                 refreshStats();
                 refreshAssocFilter();
                 renderTable();
@@ -220,24 +276,92 @@
             }
         }
 
+        /* ──────────────────────────────────────────
+           MIGRAZIONE automatica dal vecchio formato
+           Vecchio: { title, booklet_number, associated, stock }
+           Nuovo:   { title, libretto_id }  +  collezione "libretti"
+        ────────────────────────────────────────── */
+        async function migrateIfNeeded() {
+            const oldSongs = songs.filter(s =>
+                s.stock !== undefined || s.booklet_number !== undefined
+            );
+            if (oldSongs.length === 0) return;
+
+            if (!confirm(
+                `Trovati ${oldSongs.length} canti nel vecchio formato\n` +
+                `(con scorta e libretto come campi diretti sul canto).\n\n` +
+                `Vuoi migrare automaticamente al nuovo formato?\n` +
+                `Verranno creati libretti separati e i dati collegati.`
+            )) return;
+
+            // Un libretto per ogni combo unica (booklet_number, associated)
+            const libMap = new Map();
+            for (const s of oldSongs) {
+                if (!s.booklet_number && !s.associated) continue;
+                const key = `${s.booklet_number ?? ''}|||${s.associated ?? ''}`;
+                if (!libMap.has(key)) {
+                    libMap.set(key, {
+                        number:     s.booklet_number || '(senza numero)',
+                        associated: s.associated    || '',
+                        stock:      s.stock         || 0,
+                    });
+                }
+            }
+
+            // Crea libretti su Firestore
+            const libIdMap = new Map();
+            for (const [key, data] of libMap.entries()) {
+                const ref = await addDoc(collection(db, 'libretti'), data);
+                libretti.push({ id: ref.id, ...data });
+                libIdMap.set(key, ref.id);
+            }
+
+            // Aggiorna canti in batch
+            for (let i = 0; i < oldSongs.length; i += 500) {
+                const batch = writeBatch(db);
+                oldSongs.slice(i, i + 500).forEach(s => {
+                    const hasLib = s.booklet_number || s.associated;
+                    const key    = `${s.booklet_number ?? ''}|||${s.associated ?? ''}`;
+                    batch.update(doc(db, 'canti', s.id), {
+                        libretto_id:    hasLib ? (libIdMap.get(key) || null) : null,
+                        stock:          deleteField(),
+                        booklet_number: deleteField(),
+                        associated:     deleteField(),
+                    });
+                });
+                await batch.commit();
+            }
+
+            // Aggiorna in memoria
+            songs = songs.map(s => {
+                if (s.stock === undefined && s.booklet_number === undefined) return s;
+                const hasLib = s.booklet_number || s.associated;
+                const key    = `${s.booklet_number ?? ''}|||${s.associated ?? ''}`;
+                return { id: s.id, title: s.title, libretto_id: hasLib ? (libIdMap.get(key) || null) : null };
+            });
+
+            toast(`Migrazione completata: ${libMap.size} librett${libMap.size === 1 ? 'o creato' : 'i creati'}.`, 4000);
+        }
+
+        /* ──────────────────────────────────────────
+           CANTI – CRUD
+        ────────────────────────────────────────── */
         window.saveSong = async function () {
-            const title = document.getElementById('f-title').value.trim();
-            const booklet = document.getElementById('f-booklet').value.trim();
-            const assoc = document.getElementById('f-assoc').value.trim();
-            const stock = parseInt(document.getElementById('f-stock').value) || 0;
+            const title       = document.getElementById('f-title').value.trim();
+            const libretto_id = document.getElementById('f-libretto').value || null;
             if (!title) { alert('Il titolo è obbligatorio.'); return; }
 
             const btn = document.getElementById('btn-save-song');
             btn.disabled = true;
             try {
                 if (editingId) {
-                    await updateDoc(doc(db, 'canti', editingId), { title, booklet_number: booklet, associated: assoc, stock });
+                    await updateDoc(doc(db, 'canti', editingId), { title, libretto_id });
                     const i = songs.findIndex(s => s.id === editingId);
-                    if (i >= 0) songs[i] = { id: editingId, title, booklet_number: booklet, associated: assoc, stock };
+                    if (i >= 0) songs[i] = { ...songs[i], title, libretto_id };
                     toast('Canto aggiornato');
                 } else {
-                    const ref = await addDoc(collection(db, 'canti'), { title, booklet_number: booklet, associated: assoc, stock });
-                    songs.push({ id: ref.id, title, booklet_number: booklet, associated: assoc, stock });
+                    const ref = await addDoc(collection(db, 'canti'), { title, libretto_id });
+                    songs.push({ id: ref.id, title, libretto_id });
                     toast('Canto aggiunto');
                 }
                 closeSongModal();
@@ -264,23 +388,336 @@
             }
         };
 
-        window.saveStock = async function (id, val) {
-            const stock = parseInt(val) || 0;
+        /* ──────────────────────────────────────────
+           LIBRETTI – CRUD
+        ────────────────────────────────────────── */
+        window.saveLibretto = async function () {
+            const number     = document.getElementById('fl-number').value.trim();
+            const associated = document.getElementById('fl-assoc').value.trim();
+            const stock      = parseInt(document.getElementById('fl-stock').value) || 0;
+            if (!number) { alert('Il numero/nome del libretto è obbligatorio.'); return; }
+
+            const btn = document.getElementById('btn-save-libretto');
+            btn.disabled = true;
             try {
-                await updateDoc(doc(db, 'canti', id), { stock });
-                const s = songs.find(s => s.id === id);
-                if (s) s.stock = stock;
+                if (editingLibrettoId) {
+                    await updateDoc(doc(db, 'libretti', editingLibrettoId), { number, associated, stock });
+                    const i = libretti.findIndex(l => l.id === editingLibrettoId);
+                    if (i >= 0) libretti[i] = { id: editingLibrettoId, number, associated, stock };
+                    toast('Libretto aggiornato');
+                } else {
+                    const ref = await addDoc(collection(db, 'libretti'), { number, associated, stock });
+                    libretti.push({ id: ref.id, number, associated, stock });
+                    toast('Libretto aggiunto');
+                    // Se il modal era stato aperto dalla scheda canto, pre-seleziona il nuovo libretto
+                    if (librettoFromSong) populateLibrettoSelect(ref.id);
+                }
+                closeLibrettoModal();
                 refreshStats();
+                refreshAssocFilter();
                 renderTable();
-                toast('Scorta salvata');
+                if (document.getElementById('modal-libretti').classList.contains('open')) renderLibrettiTable();
+            } catch (e) {
+                toast('Errore: ' + e.message, 4000);
+            }
+            btn.disabled = false;
+        };
+
+        window.deleteLibretto = async function (id) {
+            const lib       = libretti.find(l => l.id === id);
+            const refsCount = songs.filter(s => s.libretto_id === id).length;
+            const msg = refsCount > 0
+                ? `Il libretto "${lib?.number}" è usato da ${refsCount} canto/i.\n\nEliminandolo quei canti rimarranno senza libretto. Continuare?`
+                : `Eliminare il libretto "${lib?.number}"?`;
+            if (!confirm(msg)) return;
+
+            try {
+                if (refsCount > 0) {
+                    for (let i = 0; i < songs.length; i += 500) {
+                        const batch = writeBatch(db);
+                        songs.slice(i, i + 500)
+                             .filter(s => s.libretto_id === id)
+                             .forEach(s => batch.update(doc(db, 'canti', s.id), { libretto_id: null }));
+                        await batch.commit();
+                    }
+                    songs = songs.map(s => s.libretto_id === id ? { ...s, libretto_id: null } : s);
+                }
+                await deleteDoc(doc(db, 'libretti', id));
+                libretti = libretti.filter(l => l.id !== id);
+                refreshStats();
+                refreshAssocFilter();
+                renderTable();
+                renderLibrettiTable();
+                toast('Libretto eliminato');
             } catch (e) {
                 toast('Errore: ' + e.message, 4000);
             }
         };
 
-        /* ══════════════════════════════════════════
+        /* Aggiorna la scorta su un libretto (chiamata dall'inline edit sia nella tabella canti che in quella libretti) */
+        window.saveLibrettoStock = async function (librId, val) {
+            const stock = parseInt(val) || 0;
+            try {
+                await updateDoc(doc(db, 'libretti', librId), { stock });
+                const l = libretti.find(l => l.id === librId);
+                if (l) l.stock = stock;
+                refreshStats();
+                renderTable();
+                if (document.getElementById('modal-libretti').classList.contains('open')) renderLibrettiTable();
+                toast('Scorta aggiornata');
+            } catch (e) {
+                toast('Errore: ' + e.message, 4000);
+            }
+        };
+
+        /* ──────────────────────────────────────────
+           RENDER – TABELLA CANTI
+        ────────────────────────────────────────── */
+        window.renderTable = function () {
+            const q  = document.getElementById('search').value.toLowerCase();
+            const fa = document.getElementById('filter-assoc').value;
+
+            // Arricchisci ogni canto con i dati del suo libretto
+            const enriched = songs.map(s => {
+                const lib = libretti.find(l => l.id === s.libretto_id) || null;
+                return {
+                    ...s,
+                    booklet_number: lib?.number     ?? '',
+                    associated:     lib?.associated ?? '',
+                    stock:          lib?.stock      ?? null,   // null = nessun libretto
+                    libretto:       lib,
+                };
+            });
+
+            // Filtro
+            const filtered = enriched.filter(s => {
+                const matchQ     = !q  || s.title.toLowerCase().includes(q)
+                                       || s.booklet_number.toLowerCase().includes(q)
+                                       || s.associated.toLowerCase().includes(q);
+                const matchAssoc = !fa || s.associated === fa;
+                return matchQ && matchAssoc;
+            });
+
+            // Ordina
+            filtered.sort((a, b) => {
+                let va = a[sortCol] ?? '', vb = b[sortCol] ?? '';
+                if (sortCol === 'stock') {
+                    va = va === null ? -Infinity : +va;
+                    vb = vb === null ? -Infinity : +vb;
+                } else {
+                    va = String(va).toLowerCase();
+                    vb = String(vb).toLowerCase();
+                }
+                return va < vb ? -sortDir : va > vb ? sortDir : 0;
+            });
+
+            const tbody = document.getElementById('tbody');
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5"><div class="empty">
+                    <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 0 1 0 10h-2m-7-5h8"/>
+                    </svg>
+                    <div>Nessun canto trovato</div></div></td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(s => {
+                const st    = s.stock;
+                const libId = s.libretto_id;
+                const cls   = st === null ? '' : st === 0 ? 'zero' : st <= 2 ? 'low' : 'ok';
+                const stLbl = st === null ? '—' : st;
+
+                // Il pill ha id univoco per song (per l'inline edit); la scorta deriva dal libretto
+                const stockCell = st !== null
+                    ? `<span class="stock-pill ${cls}" id="stock-display-${s.id}">${stLbl}</span>`
+                    : `<span style="color:var(--muted)">—</span>`;
+
+                // Il bottone "modifica scorta" aggiorna il libretto (non il canto)
+                const stockBtn = libId
+                    ? `<button class="btn btn-ghost btn-sm" onclick="editStock('${s.id}','${libId}',${st ?? 0})" title="Modifica scorta del libretto"><i class="fa-solid fa-plus-minus"></i></button>`
+                    : '';
+
+                return `<tr>
+                    <td class="col-title" style="font-weight:500">${esc(s.title)}</td>
+                    <td class="col-booklet" style="color:var(--muted)">${esc(s.booklet_number || '—')}</td>
+                    <td class="col-assoc"   style="color:var(--muted)">${esc(s.associated    || '—')}</td>
+                    <td class="col-stock">${stockCell}</td>
+                    <td class="col-actions">
+                        ${stockBtn}
+                        <button class="btn btn-ghost btn-sm" onclick="openEditModal('${s.id}')" title="Modifica canto"><i class="fa-solid fa-pencil"></i></button>
+                        <button class="btn btn-ghost btn-sm" onclick="deleteSong('${s.id}','${esc(s.title).replace(/'/g,"\\'")}')"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            }).join('');
+        };
+
+        /* Inline edit scorta dalla tabella canti → salva sul libretto */
+        window.editStock = function (songId, librId, current) {
+            const el = document.getElementById('stock-display-' + songId);
+            if (!el) return;
+            const inp = document.createElement('input');
+            inp.type = 'number'; inp.min = 0; inp.value = current;
+            inp.className = 'stock-input';
+            inp.onblur    = () => saveLibrettoStock(librId, inp.value);
+            inp.onkeydown = e => {
+                if (e.key === 'Enter')  inp.blur();
+                if (e.key === 'Escape') renderTable();
+            };
+            el.replaceWith(inp);
+            inp.focus(); inp.select();
+        };
+
+        /* ──────────────────────────────────────────
+           RENDER – TABELLA LIBRETTI (modal)
+        ────────────────────────────────────────── */
+        function renderLibrettiTable() {
+            const wrap = document.getElementById('libretti-table-wrap');
+            if (!wrap) return;
+
+            if (libretti.length === 0) {
+                wrap.innerHTML = `<p style="color:var(--muted);text-align:center;padding:28px 0;">
+                    Nessun libretto ancora. Aggiungine uno!
+                </p>`;
+                return;
+            }
+
+            const sorted = [...libretti].sort((a, b) =>
+                String(a.number).localeCompare(String(b.number), 'it')
+            );
+
+            wrap.innerHTML = `
+            <table style="width:100%;border-collapse:collapse;font-size:14px;">
+                <thead>
+                    <tr style="border-bottom:2px solid var(--border);">
+                        <th style="text-align:left;padding:6px 8px;color:var(--muted);font-weight:500;font-size:12px;">N°/Nome</th>
+                        <th style="text-align:left;padding:6px 8px;color:var(--muted);font-weight:500;font-size:12px;">Associazione</th>
+                        <th style="text-align:center;padding:6px 8px;color:var(--muted);font-weight:500;font-size:12px;">Scorta</th>
+                        <th style="text-align:center;padding:6px 8px;color:var(--muted);font-weight:500;font-size:12px;">Canti</th>
+                        <th style="width:1%;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${sorted.map(l => {
+                        const count = songs.filter(s => s.libretto_id === l.id).length;
+                        const st    = l.stock || 0;
+                        const cls   = st === 0 ? 'zero' : st <= 2 ? 'low' : 'ok';
+                        return `<tr style="border-bottom:1px solid var(--border);">
+                            <td style="padding:8px;">${esc(l.number)}</td>
+                            <td style="padding:8px;color:var(--muted);">${esc(l.associated || '—')}</td>
+                            <td style="text-align:center;padding:8px;">
+                                <span class="stock-pill ${cls}" id="lib-stock-${l.id}">${st}</span>
+                            </td>
+                            <td style="text-align:center;padding:8px;color:var(--muted);">${count}</td>
+                            <td style="padding:8px;white-space:nowrap;">
+                                <button class="btn btn-ghost btn-sm" onclick="editLibStock('${l.id}',${st})" title="Modifica scorta"><i class="fa-solid fa-plus-minus"></i></button>
+                                <button class="btn btn-ghost btn-sm" onclick="openLibrettoModal('${l.id}',false)" title="Modifica"><i class="fa-solid fa-pencil"></i></button>
+                                <button class="btn btn-ghost btn-sm" onclick="deleteLibretto('${l.id}')"><i class="fa-solid fa-trash"></i></button>
+                            </td>
+                        </tr>`;
+                    }).join('')}
+                </tbody>
+            </table>`;
+        }
+
+        window.editLibStock = function (librId, current) {
+            const el = document.getElementById('lib-stock-' + librId);
+            if (!el) return;
+            const inp = document.createElement('input');
+            inp.type = 'number'; inp.min = 0; inp.value = current;
+            inp.className = 'stock-input';
+            inp.style.width = '64px';
+            inp.onblur    = () => saveLibrettoStock(librId, inp.value);
+            inp.onkeydown = e => {
+                if (e.key === 'Enter')  inp.blur();
+                if (e.key === 'Escape') renderLibrettiTable();
+            };
+            el.replaceWith(inp);
+            inp.focus(); inp.select();
+        };
+
+        /* ──────────────────────────────────────────
+           MODALS – CANTI
+        ────────────────────────────────────────── */
+        function populateLibrettoSelect(selectedId) {
+            const sel    = document.getElementById('f-libretto');
+            const sorted = [...libretti].sort((a, b) =>
+                String(a.number).localeCompare(String(b.number), 'it')
+            );
+            sel.innerHTML = '<option value="">— Nessun libretto —</option>' +
+                sorted.map(l =>
+                    `<option value="${l.id}" ${l.id === selectedId ? 'selected' : ''}>${esc(l.number)}` +
+                    (l.associated ? ` — ${esc(l.associated)}` : '') +
+                    `</option>`
+                ).join('');
+        }
+
+        window.openAddModal = () => {
+            editingId = null;
+            document.getElementById('modal-song-title').textContent = 'Aggiungi canto';
+            document.getElementById('f-title').value = '';
+            populateLibrettoSelect(null);
+            document.getElementById('modal-song').classList.add('open');
+            document.getElementById('f-title').focus();
+        };
+
+        window.openEditModal = id => {
+            const s = songs.find(s => s.id === id);
+            if (!s) return;
+            editingId = id;
+            document.getElementById('modal-song-title').textContent = 'Modifica canto';
+            document.getElementById('f-title').value = s.title || '';
+            populateLibrettoSelect(s.libretto_id || null);
+            document.getElementById('modal-song').classList.add('open');
+            document.getElementById('f-title').focus();
+        };
+
+        window.closeSongModal = (e) => {
+            if (e && e.target !== document.getElementById('modal-song')) return;
+            document.getElementById('modal-song').classList.remove('open');
+        };
+
+        /* ──────────────────────────────────────────
+           MODALS – LIBRETTI
+        ────────────────────────────────────────── */
+        window.openLibrettiModal = () => {
+            renderLibrettiTable();
+            document.getElementById('modal-libretti').classList.add('open');
+        };
+
+        window.closeLibrettiModal = (e) => {
+            if (e && e.target !== document.getElementById('modal-libretti')) return;
+            document.getElementById('modal-libretti').classList.remove('open');
+        };
+
+        window.openLibrettoModal = (id = null, fromSong = false) => {
+            editingLibrettoId = id;
+            librettoFromSong  = fromSong;
+            document.getElementById('modal-libretto-title').textContent = id ? 'Modifica libretto' : 'Aggiungi libretto';
+            if (id) {
+                const l = libretti.find(l => l.id === id);
+                document.getElementById('fl-number').value = l?.number     || '';
+                document.getElementById('fl-assoc').value  = l?.associated || '';
+                document.getElementById('fl-stock').value  = l?.stock      ?? 0;
+            } else {
+                document.getElementById('fl-number').value = '';
+                document.getElementById('fl-assoc').value  = '';
+                document.getElementById('fl-stock').value  = 0;
+            }
+            document.getElementById('modal-libretto').classList.add('open');
+            document.getElementById('fl-number').focus();
+        };
+
+        window.openLibrettoModalFromSong = () => openLibrettoModal(null, true);
+
+        window.closeLibrettoModal = (e) => {
+            if (e && e.target !== document.getElementById('modal-libretto')) return;
+            document.getElementById('modal-libretto').classList.remove('open');
+            librettoFromSong = false;
+        };
+
+        /* ──────────────────────────────────────────
            IMPORT CSV
-        ═══════════════════════════════════════════ */
+        ────────────────────────────────────────── */
         window.openImportModal = () => {
             csvRows = [];
             document.getElementById('f-csv').value = '';
@@ -289,6 +726,7 @@
             document.getElementById('modal-import').classList.add('open');
             document.getElementById('f-csv').addEventListener('change', handleCSVFile, { once: true });
         };
+
         window.closeImportModal = (e) => {
             if (e && e.target !== document.getElementById('modal-import')) return;
             document.getElementById('modal-import').classList.remove('open');
@@ -299,28 +737,29 @@
             if (!file) return;
             const reader = new FileReader();
             reader.onload = ev => {
-                // rimuove BOM eventuale
-                const raw = ev.target.result.replace(/^\uFEFF/, '');
+                const raw   = ev.target.result.replace(/^\uFEFF/, '');
                 const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
                 const headers = lines[0].split(';').map(h => h.trim().toLowerCase());
-                // supporta sia "title" che "titolo"
                 const col = name => {
-                    const aliases = { title: ['title', 'titolo'], booklet_number: ['booklet_number', 'numero', 'libretto'], associated: ['associated', 'associazione'], stock: ['stock', 'scorta'] };
-                    const idx = (aliases[name] || [name]).map(a => headers.indexOf(a)).find(i => i >= 0);
-                    return idx ?? -1;
+                    const aliases = {
+                        title:          ['title', 'titolo'],
+                        booklet_number: ['booklet_number', 'numero', 'libretto', 'n° lib', 'n°libretto'],
+                        associated:     ['associated', 'associazione'],
+                        stock:          ['stock', 'scorta'],
+                    };
+                    return (aliases[name] || [name]).map(a => headers.indexOf(a)).find(i => i >= 0) ?? -1;
                 };
                 csvRows = lines.slice(1).map(l => {
-                    const cols = l.split(';');
+                    const cols  = l.split(';');
                     const title = col('title') >= 0 ? (cols[col('title')] || '').trim() : '';
                     return {
                         title,
                         booklet_number: col('booklet_number') >= 0 ? (cols[col('booklet_number')] || '').trim() : '',
-                        associated: col('associated') >= 0 ? (cols[col('associated')] || '').trim() : '',
-                        stock: parseInt(col('stock') >= 0 ? cols[col('stock')] || '0' : '0') || 0,
+                        associated:     col('associated')     >= 0 ? (cols[col('associated')]     || '').trim() : '',
+                        stock:          parseInt(col('stock') >= 0 ? cols[col('stock')] || '0' : '0') || 0,
                     };
                 }).filter(r => r.title);
-                document.getElementById('import-preview').textContent =
-                    `${csvRows.length} righe trovate.`;
+                document.getElementById('import-preview').textContent = `${csvRows.length} righe trovate.`;
                 document.getElementById('btn-import').disabled = csvRows.length === 0;
             };
             reader.readAsText(file, 'utf-8');
@@ -330,26 +769,49 @@
             const btn = document.getElementById('btn-import');
             btn.disabled = true;
             btn.textContent = 'Importando…';
+
             const existingTitles = new Set(songs.map(s => s.title.toLowerCase()));
             const toAdd = csvRows.filter(r => !existingTitles.has(r.title.toLowerCase()));
 
             if (toAdd.length === 0) {
                 toast('Nessun canto nuovo da aggiungere.', 3000);
                 btn.textContent = 'Importa';
+                btn.disabled = false;
                 return;
             }
 
+            // Costruisci/trova libretti per ogni combo unica (booklet_number, associated)
+            const libKeyMap = new Map();
+            for (const row of toAdd) {
+                if (!row.booklet_number && !row.associated) continue;
+                const key = `${row.booklet_number}|||${row.associated}`;
+                if (libKeyMap.has(key)) continue;
+                const existing = libretti.find(l =>
+                    (l.number || '') === row.booklet_number && (l.associated || '') === row.associated
+                );
+                if (existing) {
+                    libKeyMap.set(key, existing.id);
+                } else {
+                    const ref = await addDoc(collection(db, 'libretti'), {
+                        number: row.booklet_number, associated: row.associated, stock: row.stock,
+                    });
+                    libretti.push({ id: ref.id, number: row.booklet_number, associated: row.associated, stock: row.stock });
+                    libKeyMap.set(key, ref.id);
+                }
+            }
+
             try {
-                // Batch writes (max 500 per batch)
                 for (let i = 0; i < toAdd.length; i += 500) {
                     const batch = writeBatch(db);
-                    toAdd.slice(i, i + 500).forEach(song => {
+                    toAdd.slice(i, i + 500).forEach(row => {
+                        const key         = (row.booklet_number || row.associated) ? `${row.booklet_number}|||${row.associated}` : null;
+                        const libretto_id = key ? (libKeyMap.get(key) || null) : null;
                         const ref = doc(collection(db, 'canti'));
-                        batch.set(ref, song);
+                        batch.set(ref, { title: row.title, libretto_id });
                     });
                     await batch.commit();
                 }
-                await loadSongs();
+                await loadAll();
                 closeImportModal();
                 toast(`${toAdd.length} canti importati!`);
             } catch (e) {
@@ -359,126 +821,30 @@
             btn.textContent = 'Importa';
         };
 
-        /* ══════════════════════════════════════════
+        /* ──────────────────────────────────────────
            EXPORT CSV
-        ═══════════════════════════════════════════ */
+           (mantiene lo stesso formato: title; booklet_number; associated; stock)
+        ────────────────────────────────────────── */
         window.downloadCSV = function () {
             const header = 'title;booklet_number;associated;stock';
-            const rows = songs.map(s =>
-                [s.title, s.booklet_number || '', s.associated || '', s.stock || 0].join(';')
+            const rows   = songs.map(s => {
+                const lib = libretti.find(l => l.id === s.libretto_id);
+                return [s.title, lib?.number || '', lib?.associated || '', lib?.stock ?? ''].join(';');
+            });
+            const blob = new Blob(
+                ['\uFEFF' + header + '\n' + rows.join('\n')],
+                { type: 'text/csv;charset=utf-8;' }
             );
-            const blob = new Blob([header + '\n' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
+            const a   = document.createElement('a');
             a.href = url; a.download = 'canti_' + ts() + '.csv'; a.click();
             URL.revokeObjectURL(url);
             toast('CSV scaricato');
         };
 
-        /* ══════════════════════════════════════════
-           RENDER TABLE
-        ═══════════════════════════════════════════ */
-        window.renderTable = function () {
-            const q = document.getElementById('search').value.toLowerCase();
-            const fa = document.getElementById('filter-assoc').value;
-
-            let filtered = songs.filter(s => {
-                const match = !q || s.title.toLowerCase().includes(q)
-                    || (s.booklet_number || '').toLowerCase().includes(q)
-                    || (s.associated || '').toLowerCase().includes(q);
-                const assocMatch = !fa || s.associated === fa;
-                return match && assocMatch;
-            });
-
-            filtered.sort((a, b) => {
-                let va = a[sortCol] ?? '', vb = b[sortCol] ?? '';
-                if (sortCol === 'stock') { va = +va; vb = +vb; }
-                else { va = String(va).toLowerCase(); vb = String(vb).toLowerCase(); }
-                return va < vb ? -sortDir : va > vb ? sortDir : 0;
-            });
-
-            const tbody = document.getElementById('tbody');
-            if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5"><div class="empty">
-        <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-          <path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 0 1 0 10h-2m-7-5h8"/>
-        </svg>
-        <div>Nessun canto trovato</div></div></td></tr>`;
-                return;
-            }
-
-            tbody.innerHTML = filtered.map(s => {
-                const st = s.stock || 0;
-                const cls = st === 0 ? 'zero' : st <= 2 ? 'low' : 'ok';
-                return `<tr>
-        <td class="col-title" style="font-weight:500">${esc(s.title)}</td>
-        <td class="col-booklet" style="color:var(--muted)">${esc(s.booklet_number || '—')}</td>
-        <td class="col-assoc" style="color:var(--muted)">${esc(s.associated || '—')}</td>
-        <td class="col-stock">
-          <span class="stock-pill ${cls}" id="stock-display-${s.id}">${st}</span>
-        </td>
-        <td class="col-actions">
-          <button class="btn btn-ghost btn-sm" onclick="editStock('${s.id}', ${st})" title="Modifica scorta"><i class="fa-solid fa-plus-minus"></i></button>
-          <button class="btn btn-ghost btn-sm" onclick="openEditModal('${s.id}')" title="Modifica"><i class="fa-solid fa-pencil"></i></button>
-          <button class="btn btn-ghost btn-sm" onclick="deleteSong('${s.id}', '${esc(s.title).replace(/'/g, "\\'")}')"><i class="fa-solid fa-trash"></i></button>
-        </td>
-      </tr>`;
-            }).join('');
-        };
-
-        window.editStock = function (id, current) {
-            const el = document.getElementById('stock-display-' + id);
-            if (!el) return;
-            const inp = document.createElement('input');
-            inp.type = 'number'; inp.min = 0; inp.value = current;
-            inp.className = 'stock-input';
-            inp.onblur = () => saveStock(id, inp.value);
-            inp.onkeydown = e => { if (e.key === 'Enter') inp.blur(); if (e.key === 'Escape') renderTable(); };
-            el.replaceWith(inp);
-            inp.focus(); inp.select();
-        };
-
-        /* ══════════════════════════════════════════
-           MODALS
-        ═══════════════════════════════════════════ */
-        window.openAddModal = () => {
-            editingId = null;
-            document.getElementById('modal-song-title').textContent = 'Aggiungi canto';
-            ['f-title', 'f-booklet', 'f-assoc'].forEach(id => document.getElementById(id).value = '');
-            document.getElementById('f-stock').value = 0;
-            document.getElementById('modal-song').classList.add('open');
-            document.getElementById('f-title').focus();
-        };
-
-        window.openEditModal = (id) => {
-            const s = songs.find(s => s.id === id);
-            if (!s) return;
-            editingId = id;
-            document.getElementById('modal-song-title').textContent = 'Modifica canto';
-            document.getElementById('f-title').value = s.title || '';
-            document.getElementById('f-booklet').value = s.booklet_number || '';
-            document.getElementById('f-assoc').value = s.associated || '';
-            document.getElementById('f-stock').value = s.stock || 0;
-            document.getElementById('modal-song').classList.add('open');
-            document.getElementById('f-title').focus();
-        };
-
-        window.closeSongModal = (e) => {
-            if (e && e.target !== document.getElementById('modal-song')) return;
-            document.getElementById('modal-song').classList.remove('open');
-        };
-
-        // Keyboard close
-        document.addEventListener('keydown', e => {
-            if (e.key === 'Escape') {
-                document.getElementById('modal-song').classList.remove('open');
-                document.getElementById('modal-import').classList.remove('open');
-            }
-        });
-
-        /* ══════════════════════════════════════════
+        /* ──────────────────────────────────────────
            SORT
-        ═══════════════════════════════════════════ */
+        ────────────────────────────────────────── */
         window.sortBy = function (col) {
             if (sortCol === col) sortDir *= -1;
             else { sortCol = col; sortDir = 1; }
@@ -487,32 +853,48 @@
             renderTable();
         };
 
-        /* ══════════════════════════════════════════
-           HELPERS
-        ═══════════════════════════════════════════ */
+        /* ──────────────────────────────────────────
+           STATS & FILTRI
+        ────────────────────────────────────────── */
         function refreshStats() {
             document.getElementById('stat-total').textContent = songs.length;
-            const total = songs.reduce((a, s) => a + (s.stock || 0), 0);
-            const low = songs.filter(s => (s.stock || 0) <= 2).length;
-            document.getElementById('stat-stock').textContent = total;
-            document.getElementById('stat-low').textContent = low;
+            // Le scorte sono sui libretti; sommiamo le copie di ogni libretto
+            const totalStock = libretti.reduce((a, l) => a + (l.stock || 0), 0);
+            const lowCount   = libretti.filter(l => (l.stock || 0) <= 2).length;
+            document.getElementById('stat-stock').textContent = totalStock;
+            document.getElementById('stat-low').textContent   = lowCount;
         }
 
         function refreshAssocFilter() {
             const sel = document.getElementById('filter-assoc');
             const cur = sel.value;
-            const opts = [...new Set(songs.map(s => s.associated).filter(Boolean))].sort();
+            const opts = [...new Set(libretti.map(l => l.associated).filter(Boolean))].sort();
             sel.innerHTML = '<option value="">Tutte le associazioni</option>' +
                 opts.map(o => `<option value="${esc(o)}" ${o === cur ? 'selected' : ''}>${esc(o)}</option>`).join('');
         }
 
+        /* ──────────────────────────────────────────
+           TASTIERA – Escape chiude solo il modal più profondo
+        ────────────────────────────────────────── */
+        document.addEventListener('keydown', e => {
+            if (e.key !== 'Escape') return;
+            const order = ['modal-libretto', 'modal-import', 'modal-song', 'modal-libretti'];
+            for (const id of order) {
+                const el = document.getElementById(id);
+                if (el?.classList.contains('open')) { el.classList.remove('open'); break; }
+            }
+        });
+
+        /* ──────────────────────────────────────────
+           HELPERS
+        ────────────────────────────────────────── */
         function showState(state) {
             const el = document.getElementById('table-state');
             if (state === 'loading') {
                 el.innerHTML = '<div class="spinner"></div>';
                 el.style.display = 'block';
             } else if (state === 'error') {
-                el.innerHTML = '<div class="empty">Errore nel caricamento dei dati. Controlla la configurazione Firebase.</div>';
+                el.innerHTML = '<div class="empty">Errore nel caricamento. Controlla la configurazione Firebase.</div>';
                 el.style.display = 'block';
             } else {
                 el.style.display = 'none';
@@ -529,7 +911,11 @@
         };
 
         function esc(s) {
-            return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            return String(s ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
         }
 
         function ts() {
@@ -538,5 +924,4 @@
     </script>
 
 </body>
-
 </html>
