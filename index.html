@@ -53,10 +53,10 @@
          APP
     ═══════════════════════════════════════════════ -->
     <header>
-        <div class="logo">Cori San Vito <span>/ Libretti</span></div>
+        <div class="logo">Cori San Vito <span>/ Foglietti</span></div>
         <div class="header-actions">
-            <button class="btn btn-outline btn-sm" onclick="openLibrettiModal()">
-                <i class="fa-solid fa-book-open"></i> Libretti
+            <button class="btn btn-outline btn-sm" onclick="openFogliettiModal()">
+                <i class="fa-solid fa-book-open"></i> Foglietti
             </button>
             <button class="btn btn-outline btn-sm" onclick="downloadCSV()">⬇ CSV</button>
             <button class="btn btn-outline btn-sm" onclick="openImportModal()">⬆ Importa CSV</button>
@@ -76,7 +76,7 @@
             </div>
             <div class="stat">
                 <div class="stat-val" id="stat-low" style="color:var(--danger)">—</div>
-                <div class="stat-lbl">Libretti esauriti/bassi (≤ 2)</div>
+                <div class="stat-lbl">Foglietti esauriti/bassi (≤ 2)</div>
             </div>
         </div>
 
@@ -87,7 +87,7 @@
                     <circle cx="11" cy="11" r="8" />
                     <line x1="21" y1="21" x2="16.65" y2="16.65" />
                 </svg>
-                <input id="search" type="search" placeholder="Cerca per titolo, libretto o associazione…"
+                <input id="search" type="search" placeholder="Cerca per titolo, foglietto o associazione…"
                     oninput="renderTable()" />
             </div>
             <select id="filter-assoc" class="btn btn-outline" onchange="renderTable()" style="padding:8px 12px;">
@@ -100,7 +100,7 @@
                 <thead>
                     <tr>
                         <th class="col-title"   onclick="sortBy('title')"          id="th-title">Titolo</th>
-                        <th class="col-booklet" onclick="sortBy('booklet_number')" id="th-booklet">Libretto</th>
+                        <th class="col-booklet" onclick="sortBy('booklet_number')" id="th-booklet">Foglietto</th>
                         <th class="col-assoc"   onclick="sortBy('associated')"     id="th-assoc">Associazione</th>
                         <th class="col-stock"   onclick="sortBy('stock')"          id="th-stock">Scorta</th>
                         <th class="col-actions"></th>
@@ -120,13 +120,13 @@
             <div class="modal-title" id="modal-song-title">Aggiungi canto</div>
             <div class="field"><label>Titolo *</label><input id="f-title" type="text" /></div>
             <div class="field">
-                <label>Libretto</label>
+                <label>Foglietto</label>
                 <div style="display:flex;gap:8px;align-items:center;">
-                    <select id="f-libretto"
+                    <select id="f-foglietto"
                         style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:14px;background:var(--surface,#fff);color:var(--text,#111);">
-                        <option value="">— Nessun libretto —</option>
+                        <option value="">— Nessun foglietto —</option>
                     </select>
-                    <button class="btn btn-outline btn-sm" onclick="openLibrettoModalFromSong()" type="button">+ Nuovo</button>
+                    <button class="btn btn-outline btn-sm" onclick="openFogliettoModalFromSong()" type="button">+ Nuovo</button>
                 </div>
             </div>
             <div class="modal-actions">
@@ -136,25 +136,25 @@
         </div>
     </div>
 
-    <!-- ── MODAL: Lista libretti ── -->
-    <div class="overlay" id="modal-libretti" onclick="closeLibrettiModal(event)">
+    <!-- ── MODAL: Lista foglietti ── -->
+    <div class="overlay" id="modal-foglietti" onclick="closeFogliettiModal(event)">
         <div class="modal" style="width:min(720px,95vw);max-height:85vh;display:flex;flex-direction:column;">
             <div class="modal-title"
                 style="display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
-                <span>Gestisci libretti</span>
-                <button class="btn btn-primary btn-sm" onclick="openLibrettoModal(null, false)">+ Aggiungi</button>
+                <span>Gestisci foglietti</span>
+                <button class="btn btn-primary btn-sm" onclick="openFogliettoModal(null, false)">+ Aggiungi</button>
             </div>
-            <div id="libretti-table-wrap" style="overflow-y:auto;flex:1;margin-top:12px;"></div>
+            <div id="foglietti-table-wrap" style="overflow-y:auto;flex:1;margin-top:12px;"></div>
             <div class="modal-actions" style="flex-shrink:0;margin-top:12px;">
-                <button class="btn btn-outline" onclick="closeLibrettiModal()">Chiudi</button>
+                <button class="btn btn-outline" onclick="closeFogliettiModal()">Chiudi</button>
             </div>
         </div>
     </div>
 
-    <!-- ── MODAL: Aggiungi / Modifica singolo libretto ── -->
-    <div class="overlay" id="modal-libretto" onclick="closeLibrettoModal(event)">
+    <!-- ── MODAL: Aggiungi / Modifica singolo foglietto ── -->
+    <div class="overlay" id="modal-foglietto" onclick="closeFogliettoModal(event)">
         <div class="modal">
-            <div class="modal-title" id="modal-libretto-title">Aggiungi libretto</div>
+            <div class="modal-title" id="modal-foglietto-title">Aggiungi foglietto</div>
             <div class="field">
                 <label>Numero / Nome *</label>
                 <input id="fl-number" type="text" placeholder="es. L01 oppure «Avvento 2024»" />
@@ -162,8 +162,8 @@
             <div class="field"><label>Associazione</label><input id="fl-assoc" type="text" /></div>
             <div class="field"><label>Scorta</label><input id="fl-stock" type="number" min="0" value="0" /></div>
             <div class="modal-actions">
-                <button class="btn btn-outline" onclick="closeLibrettoModal()">Annulla</button>
-                <button class="btn btn-primary" id="btn-save-libretto" onclick="saveLibretto()">Salva</button>
+                <button class="btn btn-outline" onclick="closeFogliettoModal()">Annulla</button>
+                <button class="btn btn-primary" id="btn-save-foglietto" onclick="saveFoglietto()">Salva</button>
             </div>
         </div>
     </div>
@@ -176,7 +176,7 @@
                 Il CSV deve avere il separatore <code>;</code> e le colonne:<br>
                 <code>title; booklet_number; associated; stock</code><br><br>
                 Per ogni combinazione unica di <em>booklet_number + associated</em> viene creato
-                (o riutilizzato) un libretto. <strong>I canti già esistenti vengono saltati</strong>
+                (o riutilizzato) un foglietto. <strong>I canti già esistenti vengono saltati</strong>
                 (confronto per titolo).
             </p>
             <div class="field"><label>File CSV</label><input id="f-csv" type="file" accept=".csv" /></div>
@@ -203,17 +203,17 @@
 
         /* ──────────────────────────────────────────
            STATE
-           - songs    : { id, title, libretto_id }
-           - libretti : { id, number, associated, stock }
-           La scorta NON è sul canto; è sul libretto.
-           Più canti sullo stesso libretto condividono la stessa scorta.
+           - songs    : { id, title, foglietto_id }
+           - foglietti : { id, number, associated, stock }
+           La scorta NON è sul canto; è sul foglietto.
+           Più canti sullo stesso foglietto condividono la stessa scorta.
         ────────────────────────────────────────── */
         let db;
         let songs    = [];
-        let libretti = [];
+        let foglietti = [];
         let editingId          = null;
-        let editingLibrettoId  = null;
-        let librettoFromSong   = false;
+        let editingFogliettoId  = null;
+        let fogliettoFromSong   = false;
         let sortCol = 'title', sortDir = 1;
         let csvRows = [];
 
@@ -259,11 +259,11 @@
         async function loadAll() {
             showState('loading');
             try {
-                const [cantiSnap, librettiSnap] = await Promise.all([
+                const [cantiSnap, fogliettiSnap] = await Promise.all([
                     getDocs(collection(db, 'canti')),
-                    getDocs(collection(db, 'libretti')),
+                    getDocs(collection(db, 'foglietti')),
                 ]);
-                libretti = librettiSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                foglietti = fogliettiSnap.docs.map(d => ({ id: d.id, ...d.data() }));
                 songs    = cantiSnap.docs.map(d => ({ id: d.id, ...d.data() }));
                 await migrateIfNeeded();
                 refreshStats();
@@ -279,7 +279,7 @@
         /* ──────────────────────────────────────────
            MIGRAZIONE automatica dal vecchio formato
            Vecchio: { title, booklet_number, associated, stock }
-           Nuovo:   { title, libretto_id }  +  collezione "libretti"
+           Nuovo:   { title, foglietto_id }  +  collezione "foglietti"
         ────────────────────────────────────────── */
         async function migrateIfNeeded() {
             const oldSongs = songs.filter(s =>
@@ -289,12 +289,12 @@
 
             if (!confirm(
                 `Trovati ${oldSongs.length} canti nel vecchio formato\n` +
-                `(con scorta e libretto come campi diretti sul canto).\n\n` +
+                `(con scorta e foglietto come campi diretti sul canto).\n\n` +
                 `Vuoi migrare automaticamente al nuovo formato?\n` +
-                `Verranno creati libretti separati e i dati collegati.`
+                `Verranno creati foglietti separati e i dati collegati.`
             )) return;
 
-            // Un libretto per ogni combo unica (booklet_number, associated)
+            // Un foglietto per ogni combo unica (booklet_number, associated)
             const libMap = new Map();
             for (const s of oldSongs) {
                 if (!s.booklet_number && !s.associated) continue;
@@ -308,11 +308,11 @@
                 }
             }
 
-            // Crea libretti su Firestore
+            // Crea foglietti su Firestore
             const libIdMap = new Map();
             for (const [key, data] of libMap.entries()) {
-                const ref = await addDoc(collection(db, 'libretti'), data);
-                libretti.push({ id: ref.id, ...data });
+                const ref = await addDoc(collection(db, 'foglietti'), data);
+                foglietti.push({ id: ref.id, ...data });
                 libIdMap.set(key, ref.id);
             }
 
@@ -323,7 +323,7 @@
                     const hasLib = s.booklet_number || s.associated;
                     const key    = `${s.booklet_number ?? ''}|||${s.associated ?? ''}`;
                     batch.update(doc(db, 'canti', s.id), {
-                        libretto_id:    hasLib ? (libIdMap.get(key) || null) : null,
+                        foglietto_id:    hasLib ? (libIdMap.get(key) || null) : null,
                         stock:          deleteField(),
                         booklet_number: deleteField(),
                         associated:     deleteField(),
@@ -337,7 +337,7 @@
                 if (s.stock === undefined && s.booklet_number === undefined) return s;
                 const hasLib = s.booklet_number || s.associated;
                 const key    = `${s.booklet_number ?? ''}|||${s.associated ?? ''}`;
-                return { id: s.id, title: s.title, libretto_id: hasLib ? (libIdMap.get(key) || null) : null };
+                return { id: s.id, title: s.title, foglietto_id: hasLib ? (libIdMap.get(key) || null) : null };
             });
 
             toast(`Migrazione completata: ${libMap.size} librett${libMap.size === 1 ? 'o creato' : 'i creati'}.`, 4000);
@@ -348,20 +348,20 @@
         ────────────────────────────────────────── */
         window.saveSong = async function () {
             const title       = document.getElementById('f-title').value.trim();
-            const libretto_id = document.getElementById('f-libretto').value || null;
+            const foglietto_id = document.getElementById('f-foglietto').value || null;
             if (!title) { alert('Il titolo è obbligatorio.'); return; }
 
             const btn = document.getElementById('btn-save-song');
             btn.disabled = true;
             try {
                 if (editingId) {
-                    await updateDoc(doc(db, 'canti', editingId), { title, libretto_id });
+                    await updateDoc(doc(db, 'canti', editingId), { title, foglietto_id });
                     const i = songs.findIndex(s => s.id === editingId);
-                    if (i >= 0) songs[i] = { ...songs[i], title, libretto_id };
+                    if (i >= 0) songs[i] = { ...songs[i], title, foglietto_id };
                     toast('Canto aggiornato');
                 } else {
-                    const ref = await addDoc(collection(db, 'canti'), { title, libretto_id });
-                    songs.push({ id: ref.id, title, libretto_id });
+                    const ref = await addDoc(collection(db, 'canti'), { title, foglietto_id });
+                    songs.push({ id: ref.id, title, foglietto_id });
                     toast('Canto aggiunto');
                 }
                 closeSongModal();
@@ -389,46 +389,46 @@
         };
 
         /* ──────────────────────────────────────────
-           LIBRETTI – CRUD
+           FOGLIETTI – CRUD
         ────────────────────────────────────────── */
-        window.saveLibretto = async function () {
+        window.saveFoglietto = async function () {
             const number     = document.getElementById('fl-number').value.trim();
             const associated = document.getElementById('fl-assoc').value.trim();
             const stock      = parseInt(document.getElementById('fl-stock').value) || 0;
-            if (!number) { alert('Il numero/nome del libretto è obbligatorio.'); return; }
+            if (!number) { alert('Il numero/nome del foglietto è obbligatorio.'); return; }
 
-            const btn = document.getElementById('btn-save-libretto');
+            const btn = document.getElementById('btn-save-foglietto');
             btn.disabled = true;
             try {
-                if (editingLibrettoId) {
-                    await updateDoc(doc(db, 'libretti', editingLibrettoId), { number, associated, stock });
-                    const i = libretti.findIndex(l => l.id === editingLibrettoId);
-                    if (i >= 0) libretti[i] = { id: editingLibrettoId, number, associated, stock };
-                    toast('Libretto aggiornato');
+                if (editingFogliettoId) {
+                    await updateDoc(doc(db, 'foglietti', editingFogliettoId), { number, associated, stock });
+                    const i = foglietti.findIndex(l => l.id === editingFogliettoId);
+                    if (i >= 0) foglietti[i] = { id: editingFogliettoId, number, associated, stock };
+                    toast('Foglietto aggiornato');
                 } else {
-                    const ref = await addDoc(collection(db, 'libretti'), { number, associated, stock });
-                    libretti.push({ id: ref.id, number, associated, stock });
-                    toast('Libretto aggiunto');
-                    // Se il modal era stato aperto dalla scheda canto, pre-seleziona il nuovo libretto
-                    if (librettoFromSong) populateLibrettoSelect(ref.id);
+                    const ref = await addDoc(collection(db, 'foglietti'), { number, associated, stock });
+                    foglietti.push({ id: ref.id, number, associated, stock });
+                    toast('Foglietto aggiunto');
+                    // Se il modal era stato aperto dalla scheda canto, pre-seleziona il nuovo foglietto
+                    if (fogliettoFromSong) populateFogliettoSelect(ref.id);
                 }
-                closeLibrettoModal();
+                closeFogliettoModal();
                 refreshStats();
                 refreshAssocFilter();
                 renderTable();
-                if (document.getElementById('modal-libretti').classList.contains('open')) renderLibrettiTable();
+                if (document.getElementById('modal-foglietti').classList.contains('open')) renderFogliettiTable();
             } catch (e) {
                 toast('Errore: ' + e.message, 4000);
             }
             btn.disabled = false;
         };
 
-        window.deleteLibretto = async function (id) {
-            const lib       = libretti.find(l => l.id === id);
-            const refsCount = songs.filter(s => s.libretto_id === id).length;
+        window.deleteFoglietto = async function (id) {
+            const lib       = foglietti.find(l => l.id === id);
+            const refsCount = songs.filter(s => s.foglietto_id === id).length;
             const msg = refsCount > 0
-                ? `Il libretto "${lib?.number}" è usato da ${refsCount} canto/i.\n\nEliminandolo quei canti rimarranno senza libretto. Continuare?`
-                : `Eliminare il libretto "${lib?.number}"?`;
+                ? `Il foglietto "${lib?.number}" è usato da ${refsCount} canto/i.\n\nEliminandolo quei canti rimarranno senza foglietto. Continuare?`
+                : `Eliminare il foglietto "${lib?.number}"?`;
             if (!confirm(msg)) return;
 
             try {
@@ -436,34 +436,34 @@
                     for (let i = 0; i < songs.length; i += 500) {
                         const batch = writeBatch(db);
                         songs.slice(i, i + 500)
-                             .filter(s => s.libretto_id === id)
-                             .forEach(s => batch.update(doc(db, 'canti', s.id), { libretto_id: null }));
+                             .filter(s => s.foglietto_id === id)
+                             .forEach(s => batch.update(doc(db, 'canti', s.id), { foglietto_id: null }));
                         await batch.commit();
                     }
-                    songs = songs.map(s => s.libretto_id === id ? { ...s, libretto_id: null } : s);
+                    songs = songs.map(s => s.foglietto_id === id ? { ...s, foglietto_id: null } : s);
                 }
-                await deleteDoc(doc(db, 'libretti', id));
-                libretti = libretti.filter(l => l.id !== id);
+                await deleteDoc(doc(db, 'foglietti', id));
+                foglietti = foglietti.filter(l => l.id !== id);
                 refreshStats();
                 refreshAssocFilter();
                 renderTable();
-                renderLibrettiTable();
-                toast('Libretto eliminato');
+                renderFogliettiTable();
+                toast('Foglietto eliminato');
             } catch (e) {
                 toast('Errore: ' + e.message, 4000);
             }
         };
 
-        /* Aggiorna la scorta su un libretto (chiamata dall'inline edit sia nella tabella canti che in quella libretti) */
-        window.saveLibrettoStock = async function (librId, val) {
+        /* Aggiorna la scorta su un foglietto (chiamata dall'inline edit sia nella tabella canti che in quella foglietti) */
+        window.saveFogliettoStock = async function (librId, val) {
             const stock = parseInt(val) || 0;
             try {
-                await updateDoc(doc(db, 'libretti', librId), { stock });
-                const l = libretti.find(l => l.id === librId);
+                await updateDoc(doc(db, 'foglietti', librId), { stock });
+                const l = foglietti.find(l => l.id === librId);
                 if (l) l.stock = stock;
                 refreshStats();
                 renderTable();
-                if (document.getElementById('modal-libretti').classList.contains('open')) renderLibrettiTable();
+                if (document.getElementById('modal-foglietti').classList.contains('open')) renderFogliettiTable();
                 toast('Scorta aggiornata');
             } catch (e) {
                 toast('Errore: ' + e.message, 4000);
@@ -477,15 +477,15 @@
             const q  = document.getElementById('search').value.toLowerCase();
             const fa = document.getElementById('filter-assoc').value;
 
-            // Arricchisci ogni canto con i dati del suo libretto
+            // Arricchisci ogni canto con i dati del suo foglietto
             const enriched = songs.map(s => {
-                const lib = libretti.find(l => l.id === s.libretto_id) || null;
+                const lib = foglietti.find(l => l.id === s.foglietto_id) || null;
                 return {
                     ...s,
                     booklet_number: lib?.number     ?? '',
                     associated:     lib?.associated ?? '',
-                    stock:          lib?.stock      ?? null,   // null = nessun libretto
-                    libretto:       lib,
+                    stock:          lib?.stock      ?? null,   // null = nessun foglietto
+                    foglietto:       lib,
                 };
             });
 
@@ -523,18 +523,18 @@
 
             tbody.innerHTML = filtered.map(s => {
                 const st    = s.stock;
-                const libId = s.libretto_id;
+                const libId = s.foglietto_id;
                 const cls   = st === null ? '' : st === 0 ? 'zero' : st <= 2 ? 'low' : 'ok';
                 const stLbl = st === null ? '—' : st;
 
-                // Il pill ha id univoco per song (per l'inline edit); la scorta deriva dal libretto
+                // Il pill ha id univoco per song (per l'inline edit); la scorta deriva dal foglietto
                 const stockCell = st !== null
                     ? `<span class="stock-pill ${cls}" id="stock-display-${s.id}">${stLbl}</span>`
                     : `<span style="color:var(--muted)">—</span>`;
 
-                // Il bottone "modifica scorta" aggiorna il libretto (non il canto)
+                // Il bottone "modifica scorta" aggiorna il foglietto (non il canto)
                 const stockBtn = libId
-                    ? `<button class="btn btn-ghost btn-sm" onclick="editStock('${s.id}','${libId}',${st ?? 0})" title="Modifica scorta del libretto"><i class="fa-solid fa-plus-minus"></i></button>`
+                    ? `<button class="btn btn-ghost btn-sm" onclick="editStock('${s.id}','${libId}',${st ?? 0})" title="Modifica scorta del foglietto"><i class="fa-solid fa-plus-minus"></i></button>`
                     : '';
 
                 return `<tr>
@@ -551,14 +551,14 @@
             }).join('');
         };
 
-        /* Inline edit scorta dalla tabella canti → salva sul libretto */
+        /* Inline edit scorta dalla tabella canti → salva sul foglietto */
         window.editStock = function (songId, librId, current) {
             const el = document.getElementById('stock-display-' + songId);
             if (!el) return;
             const inp = document.createElement('input');
             inp.type = 'number'; inp.min = 0; inp.value = current;
             inp.className = 'stock-input';
-            inp.onblur    = () => saveLibrettoStock(librId, inp.value);
+            inp.onblur    = () => saveFogliettoStock(librId, inp.value);
             inp.onkeydown = e => {
                 if (e.key === 'Enter')  inp.blur();
                 if (e.key === 'Escape') renderTable();
@@ -568,20 +568,20 @@
         };
 
         /* ──────────────────────────────────────────
-           RENDER – TABELLA LIBRETTI (modal)
+           RENDER – TABELLA FOGLIETTI (modal)
         ────────────────────────────────────────── */
-        function renderLibrettiTable() {
-            const wrap = document.getElementById('libretti-table-wrap');
+        function renderFogliettiTable() {
+            const wrap = document.getElementById('foglietti-table-wrap');
             if (!wrap) return;
 
-            if (libretti.length === 0) {
+            if (foglietti.length === 0) {
                 wrap.innerHTML = `<p style="color:var(--muted);text-align:center;padding:28px 0;">
-                    Nessun libretto ancora. Aggiungine uno!
+                    Nessun foglietto ancora. Aggiungine uno!
                 </p>`;
                 return;
             }
 
-            const sorted = [...libretti].sort((a, b) =>
+            const sorted = [...foglietti].sort((a, b) =>
                 String(a.number).localeCompare(String(b.number), 'it')
             );
 
@@ -598,7 +598,7 @@
                 </thead>
                 <tbody>
                     ${sorted.map(l => {
-                        const count = songs.filter(s => s.libretto_id === l.id).length;
+                        const count = songs.filter(s => s.foglietto_id === l.id).length;
                         const st    = l.stock || 0;
                         const cls   = st === 0 ? 'zero' : st <= 2 ? 'low' : 'ok';
                         return `<tr style="border-bottom:1px solid var(--border);">
@@ -610,8 +610,8 @@
                             <td style="text-align:center;padding:8px;color:var(--muted);">${count}</td>
                             <td style="padding:8px;white-space:nowrap;">
                                 <button class="btn btn-ghost btn-sm" onclick="editLibStock('${l.id}',${st})" title="Modifica scorta"><i class="fa-solid fa-plus-minus"></i></button>
-                                <button class="btn btn-ghost btn-sm" onclick="openLibrettoModal('${l.id}',false)" title="Modifica"><i class="fa-solid fa-pencil"></i></button>
-                                <button class="btn btn-ghost btn-sm" onclick="deleteLibretto('${l.id}')"><i class="fa-solid fa-trash"></i></button>
+                                <button class="btn btn-ghost btn-sm" onclick="openFogliettoModal('${l.id}',false)" title="Modifica"><i class="fa-solid fa-pencil"></i></button>
+                                <button class="btn btn-ghost btn-sm" onclick="deleteFoglietto('${l.id}')"><i class="fa-solid fa-trash"></i></button>
                             </td>
                         </tr>`;
                     }).join('')}
@@ -626,10 +626,10 @@
             inp.type = 'number'; inp.min = 0; inp.value = current;
             inp.className = 'stock-input';
             inp.style.width = '64px';
-            inp.onblur    = () => saveLibrettoStock(librId, inp.value);
+            inp.onblur    = () => saveFogliettoStock(librId, inp.value);
             inp.onkeydown = e => {
                 if (e.key === 'Enter')  inp.blur();
-                if (e.key === 'Escape') renderLibrettiTable();
+                if (e.key === 'Escape') renderFogliettiTable();
             };
             el.replaceWith(inp);
             inp.focus(); inp.select();
@@ -638,12 +638,12 @@
         /* ──────────────────────────────────────────
            MODALS – CANTI
         ────────────────────────────────────────── */
-        function populateLibrettoSelect(selectedId) {
-            const sel    = document.getElementById('f-libretto');
-            const sorted = [...libretti].sort((a, b) =>
+        function populateFogliettoSelect(selectedId) {
+            const sel    = document.getElementById('f-foglietto');
+            const sorted = [...foglietti].sort((a, b) =>
                 String(a.number).localeCompare(String(b.number), 'it')
             );
-            sel.innerHTML = '<option value="">— Nessun libretto —</option>' +
+            sel.innerHTML = '<option value="">— Nessun foglietto —</option>' +
                 sorted.map(l =>
                     `<option value="${l.id}" ${l.id === selectedId ? 'selected' : ''}>${esc(l.number)}` +
                     (l.associated ? ` — ${esc(l.associated)}` : '') +
@@ -655,7 +655,7 @@
             editingId = null;
             document.getElementById('modal-song-title').textContent = 'Aggiungi canto';
             document.getElementById('f-title').value = '';
-            populateLibrettoSelect(null);
+            populateFogliettoSelect(null);
             document.getElementById('modal-song').classList.add('open');
             document.getElementById('f-title').focus();
         };
@@ -666,7 +666,7 @@
             editingId = id;
             document.getElementById('modal-song-title').textContent = 'Modifica canto';
             document.getElementById('f-title').value = s.title || '';
-            populateLibrettoSelect(s.libretto_id || null);
+            populateFogliettoSelect(s.foglietto_id || null);
             document.getElementById('modal-song').classList.add('open');
             document.getElementById('f-title').focus();
         };
@@ -677,24 +677,24 @@
         };
 
         /* ──────────────────────────────────────────
-           MODALS – LIBRETTI
+           MODALS – FOGLIETTI
         ────────────────────────────────────────── */
-        window.openLibrettiModal = () => {
-            renderLibrettiTable();
-            document.getElementById('modal-libretti').classList.add('open');
+        window.openFogliettiModal = () => {
+            renderFogliettiTable();
+            document.getElementById('modal-foglietti').classList.add('open');
         };
 
-        window.closeLibrettiModal = (e) => {
-            if (e && e.target !== document.getElementById('modal-libretti')) return;
-            document.getElementById('modal-libretti').classList.remove('open');
+        window.closeFogliettiModal = (e) => {
+            if (e && e.target !== document.getElementById('modal-foglietti')) return;
+            document.getElementById('modal-foglietti').classList.remove('open');
         };
 
-        window.openLibrettoModal = (id = null, fromSong = false) => {
-            editingLibrettoId = id;
-            librettoFromSong  = fromSong;
-            document.getElementById('modal-libretto-title').textContent = id ? 'Modifica libretto' : 'Aggiungi libretto';
+        window.openFogliettoModal = (id = null, fromSong = false) => {
+            editingFogliettoId = id;
+            fogliettoFromSong  = fromSong;
+            document.getElementById('modal-foglietto-title').textContent = id ? 'Modifica foglietto' : 'Aggiungi foglietto';
             if (id) {
-                const l = libretti.find(l => l.id === id);
+                const l = foglietti.find(l => l.id === id);
                 document.getElementById('fl-number').value = l?.number     || '';
                 document.getElementById('fl-assoc').value  = l?.associated || '';
                 document.getElementById('fl-stock').value  = l?.stock      ?? 0;
@@ -703,16 +703,16 @@
                 document.getElementById('fl-assoc').value  = '';
                 document.getElementById('fl-stock').value  = 0;
             }
-            document.getElementById('modal-libretto').classList.add('open');
+            document.getElementById('modal-foglietto').classList.add('open');
             document.getElementById('fl-number').focus();
         };
 
-        window.openLibrettoModalFromSong = () => openLibrettoModal(null, true);
+        window.openFogliettoModalFromSong = () => openFogliettoModal(null, true);
 
-        window.closeLibrettoModal = (e) => {
-            if (e && e.target !== document.getElementById('modal-libretto')) return;
-            document.getElementById('modal-libretto').classList.remove('open');
-            librettoFromSong = false;
+        window.closeFogliettoModal = (e) => {
+            if (e && e.target !== document.getElementById('modal-foglietto')) return;
+            document.getElementById('modal-foglietto').classList.remove('open');
+            fogliettoFromSong = false;
         };
 
         /* ──────────────────────────────────────────
@@ -743,7 +743,7 @@
                 const col = name => {
                     const aliases = {
                         title:          ['title', 'titolo'],
-                        booklet_number: ['booklet_number', 'numero', 'libretto', 'n° lib', 'n°libretto'],
+                        booklet_number: ['booklet_number', 'numero', 'foglietto', 'n° lib', 'n°foglietto'],
                         associated:     ['associated', 'associazione'],
                         stock:          ['stock', 'scorta'],
                     };
@@ -780,22 +780,22 @@
                 return;
             }
 
-            // Costruisci/trova libretti per ogni combo unica (booklet_number, associated)
+            // Costruisci/trova foglietti per ogni combo unica (booklet_number, associated)
             const libKeyMap = new Map();
             for (const row of toAdd) {
                 if (!row.booklet_number && !row.associated) continue;
                 const key = `${row.booklet_number}|||${row.associated}`;
                 if (libKeyMap.has(key)) continue;
-                const existing = libretti.find(l =>
+                const existing = foglietti.find(l =>
                     (l.number || '') === row.booklet_number && (l.associated || '') === row.associated
                 );
                 if (existing) {
                     libKeyMap.set(key, existing.id);
                 } else {
-                    const ref = await addDoc(collection(db, 'libretti'), {
+                    const ref = await addDoc(collection(db, 'foglietti'), {
                         number: row.booklet_number, associated: row.associated, stock: row.stock,
                     });
-                    libretti.push({ id: ref.id, number: row.booklet_number, associated: row.associated, stock: row.stock });
+                    foglietti.push({ id: ref.id, number: row.booklet_number, associated: row.associated, stock: row.stock });
                     libKeyMap.set(key, ref.id);
                 }
             }
@@ -805,9 +805,9 @@
                     const batch = writeBatch(db);
                     toAdd.slice(i, i + 500).forEach(row => {
                         const key         = (row.booklet_number || row.associated) ? `${row.booklet_number}|||${row.associated}` : null;
-                        const libretto_id = key ? (libKeyMap.get(key) || null) : null;
+                        const foglietto_id = key ? (libKeyMap.get(key) || null) : null;
                         const ref = doc(collection(db, 'canti'));
-                        batch.set(ref, { title: row.title, libretto_id });
+                        batch.set(ref, { title: row.title, foglietto_id });
                     });
                     await batch.commit();
                 }
@@ -828,7 +828,7 @@
         window.downloadCSV = function () {
             const header = 'title;booklet_number;associated;stock';
             const rows   = songs.map(s => {
-                const lib = libretti.find(l => l.id === s.libretto_id);
+                const lib = foglietti.find(l => l.id === s.foglietto_id);
                 return [s.title, lib?.number || '', lib?.associated || '', lib?.stock ?? ''].join(';');
             });
             const blob = new Blob(
@@ -858,9 +858,9 @@
         ────────────────────────────────────────── */
         function refreshStats() {
             document.getElementById('stat-total').textContent = songs.length;
-            // Le scorte sono sui libretti; sommiamo le copie di ogni libretto
-            const totalStock = libretti.reduce((a, l) => a + (l.stock || 0), 0);
-            const lowCount   = libretti.filter(l => (l.stock || 0) <= 2).length;
+            // Le scorte sono sui foglietti; sommiamo le copie di ogni foglietto
+            const totalStock = foglietti.reduce((a, l) => a + (l.stock || 0), 0);
+            const lowCount   = foglietti.filter(l => (l.stock || 0) <= 2).length;
             document.getElementById('stat-stock').textContent = totalStock;
             document.getElementById('stat-low').textContent   = lowCount;
         }
@@ -868,7 +868,7 @@
         function refreshAssocFilter() {
             const sel = document.getElementById('filter-assoc');
             const cur = sel.value;
-            const opts = [...new Set(libretti.map(l => l.associated).filter(Boolean))].sort();
+            const opts = [...new Set(foglietti.map(l => l.associated).filter(Boolean))].sort();
             sel.innerHTML = '<option value="">Tutte le associazioni</option>' +
                 opts.map(o => `<option value="${esc(o)}" ${o === cur ? 'selected' : ''}>${esc(o)}</option>`).join('');
         }
@@ -878,7 +878,7 @@
         ────────────────────────────────────────── */
         document.addEventListener('keydown', e => {
             if (e.key !== 'Escape') return;
-            const order = ['modal-libretto', 'modal-import', 'modal-song', 'modal-libretti'];
+            const order = ['modal-foglietto', 'modal-import', 'modal-song', 'modal-foglietti'];
             for (const id of order) {
                 const el = document.getElementById(id);
                 if (el?.classList.contains('open')) { el.classList.remove('open'); break; }
