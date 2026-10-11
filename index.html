@@ -264,7 +264,7 @@
                     getDocs(collection(db, 'foglietti')),
                 ]);
                 foglietti = fogliettiSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-                songs    = cantiSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                songs     = cantiSnap.docs.map(d => ({ id: d.id, ...d.data() }));
                 await migrateIfNeeded();
                 refreshStats();
                 refreshAssocFilter();
@@ -277,70 +277,126 @@
         }
 
         /* ──────────────────────────────────────────
-           MIGRAZIONE automatica dal vecchio formato
-           Vecchio: { title, booklet_number, associated, stock }
-           Nuovo:   { title, foglietto_id }  +  collezione "foglietti"
+           MIGRAZIONE – gestisce tre scenari in cascata:
+
+           A) vecchissimo formato: { title, booklet_number, associated, stock }
+              → crea foglietti, scollega i campi dai canti
+
+           B) formato intermedio (rinomina libretti→foglietti):
+              collezione "libretti" in Firestore + campo "libretto_id" sui canti
+              → copia in "foglietti", aggiorna campo a "foglietto_id"
+
+           C) formato attuale: { title, foglietto_id } + collezione "foglietti"
+              → niente da fare
         ────────────────────────────────────────── */
         async function migrateIfNeeded() {
+            /* ── Scenario A: vecchio formato piatto ── */
             const oldSongs = songs.filter(s =>
                 s.stock !== undefined || s.booklet_number !== undefined
             );
-            if (oldSongs.length === 0) return;
+            if (oldSongs.length > 0) {
+                if (!confirm(
+                    `Trovati ${oldSongs.length} canti nel vecchio formato\n` +
+                    `(con scorta e foglietto come campi diretti sul canto).\n\n` +
+                    `Vuoi migrare automaticamente al nuovo formato?\n` +
+                    `Verranno creati foglietti separati e i dati collegati.`
+                )) return;
 
-            if (!confirm(
-                `Trovati ${oldSongs.length} canti nel vecchio formato\n` +
-                `(con scorta e foglietto come campi diretti sul canto).\n\n` +
-                `Vuoi migrare automaticamente al nuovo formato?\n` +
-                `Verranno creati foglietti separati e i dati collegati.`
-            )) return;
-
-            // Un foglietto per ogni combo unica (booklet_number, associated)
-            const libMap = new Map();
-            for (const s of oldSongs) {
-                if (!s.booklet_number && !s.associated) continue;
-                const key = `${s.booklet_number ?? ''}|||${s.associated ?? ''}`;
-                if (!libMap.has(key)) {
-                    libMap.set(key, {
-                        number:     s.booklet_number || '(senza numero)',
-                        associated: s.associated    || '',
-                        stock:      s.stock         || 0,
-                    });
+                const libMap = new Map();
+                for (const s of oldSongs) {
+                    if (!s.booklet_number && !s.associated) continue;
+                    const key = `${s.booklet_number ?? ''}|||${s.associated ?? ''}`;
+                    if (!libMap.has(key)) {
+                        libMap.set(key, {
+                            number:     s.booklet_number || '(senza numero)',
+                            associated: s.associated    || '',
+                            stock:      s.stock         || 0,
+                        });
+                    }
                 }
-            }
-
-            // Crea foglietti su Firestore
-            const libIdMap = new Map();
-            for (const [key, data] of libMap.entries()) {
-                const ref = await addDoc(collection(db, 'foglietti'), data);
-                foglietti.push({ id: ref.id, ...data });
-                libIdMap.set(key, ref.id);
-            }
-
-            // Aggiorna canti in batch
-            for (let i = 0; i < oldSongs.length; i += 500) {
-                const batch = writeBatch(db);
-                oldSongs.slice(i, i + 500).forEach(s => {
+                const libIdMap = new Map();
+                for (const [key, data] of libMap.entries()) {
+                    const ref = await addDoc(collection(db, 'foglietti'), data);
+                    foglietti.push({ id: ref.id, ...data });
+                    libIdMap.set(key, ref.id);
+                }
+                for (let i = 0; i < oldSongs.length; i += 500) {
+                    const batch = writeBatch(db);
+                    oldSongs.slice(i, i + 500).forEach(s => {
+                        const hasLib = s.booklet_number || s.associated;
+                        const key    = `${s.booklet_number ?? ''}|||${s.associated ?? ''}`;
+                        batch.update(doc(db, 'canti', s.id), {
+                            foglietto_id:   hasLib ? (libIdMap.get(key) || null) : null,
+                            stock:          deleteField(),
+                            booklet_number: deleteField(),
+                            associated:     deleteField(),
+                        });
+                    });
+                    await batch.commit();
+                }
+                songs = songs.map(s => {
+                    if (s.stock === undefined && s.booklet_number === undefined) return s;
                     const hasLib = s.booklet_number || s.associated;
                     const key    = `${s.booklet_number ?? ''}|||${s.associated ?? ''}`;
+                    return { id: s.id, title: s.title, foglietto_id: hasLib ? (libIdMap.get(key) || null) : null };
+                });
+                toast(`Migrazione completata: ${libMap.size} fogliett${libMap.size === 1 ? 'o creato' : 'i creati'}.`, 4000);
+                return;
+            }
+
+            /* ── Scenario B: rinomina libretti → foglietti ── */
+            // Condizione: la collezione "foglietti" è vuota ma esistono canti
+            // con campo "libretto_id" (versione intermedia con nome in italiano)
+            const songsWithOldRef = songs.filter(s => s.libretto_id !== undefined);
+            if (songsWithOldRef.length === 0) return; // già nel formato attuale
+
+            // Carica la vecchia collezione "libretti"
+            let librettiSnap;
+            try { librettiSnap = await getDocs(collection(db, 'libretti')); }
+            catch { return; }
+            if (librettiSnap.empty && foglietti.length === 0) return;
+
+            if (!confirm(
+                `Trovati dati con il vecchio nome "libretti".\n\n` +
+                `Vuoi rinominarli automaticamente in "foglietti"?\n` +
+                `L'operazione è non distruttiva: i vecchi documenti verranno eliminati solo dopo la copia.`
+            )) return;
+
+            // Copia libretti → foglietti, costruendo la mappa old_id → new_id
+            const idMap = new Map(); // libretto_id → foglietto_id
+            for (const d of librettiSnap.docs) {
+                const data = d.data();
+                const ref  = await addDoc(collection(db, 'foglietti'), data);
+                foglietti.push({ id: ref.id, ...data });
+                idMap.set(d.id, ref.id);
+            }
+
+            // Aggiorna il campo sui canti: libretto_id → foglietto_id
+            for (let i = 0; i < songsWithOldRef.length; i += 500) {
+                const batch = writeBatch(db);
+                songsWithOldRef.slice(i, i + 500).forEach(s => {
                     batch.update(doc(db, 'canti', s.id), {
-                        foglietto_id:    hasLib ? (libIdMap.get(key) || null) : null,
-                        stock:          deleteField(),
-                        booklet_number: deleteField(),
-                        associated:     deleteField(),
+                        foglietto_id: idMap.get(s.libretto_id) || null,
+                        libretto_id:  deleteField(),
                     });
                 });
                 await batch.commit();
             }
 
+            // Elimina vecchi documenti "libretti"
+            for (let i = 0; i < librettiSnap.docs.length; i += 500) {
+                const batch = writeBatch(db);
+                librettiSnap.docs.slice(i, i + 500).forEach(d => batch.delete(d.ref));
+                await batch.commit();
+            }
+
             // Aggiorna in memoria
             songs = songs.map(s => {
-                if (s.stock === undefined && s.booklet_number === undefined) return s;
-                const hasLib = s.booklet_number || s.associated;
-                const key    = `${s.booklet_number ?? ''}|||${s.associated ?? ''}`;
-                return { id: s.id, title: s.title, foglietto_id: hasLib ? (libIdMap.get(key) || null) : null };
+                if (s.libretto_id === undefined) return s;
+                return { ...s, foglietto_id: idMap.get(s.libretto_id) || null, libretto_id: undefined };
             });
 
-            toast(`Migrazione completata: ${libMap.size} librett${libMap.size === 1 ? 'o creato' : 'i creati'}.`, 4000);
+            toast(`Rinomina completata: ${librettiSnap.size} fogliett${librettiSnap.size === 1 ? 'o migrato' : 'i migrati'}.`, 4000);
         }
 
         /* ──────────────────────────────────────────
