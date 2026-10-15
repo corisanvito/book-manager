@@ -204,10 +204,13 @@
 
         /* ──────────────────────────────────────────
            STATE
-           - songs    : { id, title, foglietto_id }
+           - songs     : { id, title, foglietto_id }
            - foglietti : { id, number, associated, stock }
            La scorta NON è sul canto; è sul foglietto.
            Più canti sullo stesso foglietto condividono la stessa scorta.
+           La tabella canti mostra la scorta del foglietto su ogni riga:
+           è solo una visualizzazione, il conteggio in alto somma i foglietti
+           una sola volta.
         ────────────────────────────────────────── */
         let db;
         let songs = [];
@@ -235,8 +238,6 @@
 
         async function initFirebase(cfg) {
             try {
-                // Fix #4: elimina l'app esistente prima di reinizializzare,
-                // così "Salva e continua" funziona anche la seconda volta.
                 if (getApps().length > 0) await deleteApp(getApp());
                 const app = initializeApp(cfg);
                 db = getFirestore(app);
@@ -281,126 +282,130 @@
         }
 
         /* ──────────────────────────────────────────
-           MIGRAZIONE – gestisce tre scenari in cascata:
-
-           A) vecchissimo formato: { title, booklet_number, associated, stock }
-              → crea foglietti, scollega i campi dai canti
-
-           B) formato intermedio (rinomina libretti→foglietti):
-              collezione "libretti" in Firestore + campo "libretto_id" sui canti
-              → copia in "foglietti", aggiorna campo a "foglietto_id"
-
-           C) formato attuale: { title, foglietto_id } + collezione "foglietti"
-              → niente da fare
+           MIGRAZIONE
         ────────────────────────────────────────── */
         async function migrateIfNeeded() {
+            /* ── Scenario B: rinomina libretti → foglietti ── */
+            const songsWithOldRef = songs.filter(s => s.libretto_id !== undefined);
+            if (songsWithOldRef.length > 0) {
+                let librettiSnap;
+                try { librettiSnap = await getDocs(collection(db, 'libretti')); }
+                catch { librettiSnap = { docs: [], empty: true, size: 0 }; }
+
+                if (librettiSnap.empty && foglietti.length === 0) {
+                    if (confirm(
+                        `Trovati ${songsWithOldRef.length} canti con riferimento a "libretti" ` +
+                        `ma la collezione è vuota.\n\nVuoi rimuovere il campo orfano "libretto_id"?`
+                    )) {
+                        for (let i = 0; i < songsWithOldRef.length; i += 500) {
+                            const batch = writeBatch(db);
+                            songsWithOldRef.slice(i, i + 500).forEach(s => {
+                                batch.update(doc(db, 'canti', s.id), { libretto_id: deleteField() });
+                            });
+                            await batch.commit();
+                        }
+                        songs = songs.map(s => {
+                            if (s.libretto_id === undefined) return s;
+                            const { libretto_id, ...rest } = s;
+                            return rest;
+                        });
+                        toast('Campo orfano rimosso.', 3000);
+                    }
+                } else if (confirm(
+                    `Trovati dati con il vecchio nome "libretti".\n\n` +
+                    `Vuoi rinominarli automaticamente in "foglietti"?\n` +
+                    `L'operazione è non distruttiva: i vecchi documenti verranno eliminati solo dopo la copia.`
+                )) {
+                    const idMap = new Map();
+                    for (const d of librettiSnap.docs) {
+                        const data = d.data();
+                        const ref = await addDoc(collection(db, 'foglietti'), data);
+                        foglietti.push({ id: ref.id, ...data });
+                        idMap.set(d.id, ref.id);
+                    }
+
+                    for (let i = 0; i < songsWithOldRef.length; i += 500) {
+                        const batch = writeBatch(db);
+                        songsWithOldRef.slice(i, i + 500).forEach(s => {
+                            batch.update(doc(db, 'canti', s.id), {
+                                foglietto_id: idMap.get(s.libretto_id) || null,
+                                libretto_id: deleteField(),
+                            });
+                        });
+                        await batch.commit();
+                    }
+
+                    for (let i = 0; i < librettiSnap.docs.length; i += 500) {
+                        const batch = writeBatch(db);
+                        librettiSnap.docs.slice(i, i + 500).forEach(d => batch.delete(d.ref));
+                        await batch.commit();
+                    }
+
+                    songs = songs.map(s => {
+                        if (s.libretto_id === undefined) return s;
+                        const { libretto_id, ...rest } = s;
+                        return { ...rest, foglietto_id: idMap.get(s.libretto_id) || null };
+                    });
+
+                    toast(`Rinomina completata: ${librettiSnap.size} fogliett${librettiSnap.size === 1 ? 'o migrato' : 'i migrati'}.`, 4000);
+                }
+            }
+
             /* ── Scenario A: vecchio formato piatto ── */
             const oldSongs = songs.filter(s =>
-                s.stock !== undefined || s.booklet_number !== undefined
+                (s.booklet_number !== undefined || s.associated !== undefined) &&
+                s.foglietto_id === undefined &&
+                s.libretto_id === undefined
             );
-            if (oldSongs.length > 0) {
-                if (!confirm(
-                    `Trovati ${oldSongs.length} canti nel vecchio formato\n` +
-                    `(con scorta e foglietto come campi diretti sul canto).\n\n` +
-                    `Vuoi migrare automaticamente al nuovo formato?\n` +
-                    `Verranno creati foglietti separati e i dati collegati.`
-                )) return;
-
-                const libMap = new Map();
-                for (const s of oldSongs) {
-                    if (!s.booklet_number && !s.associated) continue;
-                    const key = `${s.booklet_number ?? ''}|||${s.associated ?? ''}`;
-                    if (!libMap.has(key)) {
-                        libMap.set(key, {
-                            number: s.booklet_number || '(senza numero)',
-                            associated: s.associated || '',
-                            stock: s.stock || 0,
-                        });
-                    }
-                }
-                const libIdMap = new Map();
-                for (const [key, data] of libMap.entries()) {
-                    const ref = await addDoc(collection(db, 'foglietti'), data);
-                    foglietti.push({ id: ref.id, ...data });
-                    libIdMap.set(key, ref.id);
-                }
-                for (let i = 0; i < oldSongs.length; i += 500) {
-                    const batch = writeBatch(db);
-                    oldSongs.slice(i, i + 500).forEach(s => {
-                        const hasLib = s.booklet_number || s.associated;
-                        const key = `${s.booklet_number ?? ''}|||${s.associated ?? ''}`;
-                        batch.update(doc(db, 'canti', s.id), {
-                            foglietto_id: hasLib ? (libIdMap.get(key) || null) : null,
-                            stock: deleteField(),
-                            booklet_number: deleteField(),
-                            associated: deleteField(),
-                        });
-                    });
-                    await batch.commit();
-                }
-                songs = songs.map(s => {
-                    if (s.stock === undefined && s.booklet_number === undefined) return s;
-                    const hasLib = s.booklet_number || s.associated;
-                    const key = `${s.booklet_number ?? ''}|||${s.associated ?? ''}`;
-                    return { id: s.id, title: s.title, foglietto_id: hasLib ? (libIdMap.get(key) || null) : null };
-                });
-                toast(`Migrazione completata: ${libMap.size} fogliett${libMap.size === 1 ? 'o creato' : 'i creati'}.`, 4000);
-                return;
-            }
-
-            /* ── Scenario B: rinomina libretti → foglietti ── */
-            // Condizione: la collezione "foglietti" è vuota ma esistono canti
-            // con campo "libretto_id" (versione intermedia con nome in italiano)
-            const songsWithOldRef = songs.filter(s => s.libretto_id !== undefined);
-            if (songsWithOldRef.length === 0) return; // già nel formato attuale
-
-            // Carica la vecchia collezione "libretti"
-            let librettiSnap;
-            try { librettiSnap = await getDocs(collection(db, 'libretti')); }
-            catch { return; }
-            if (librettiSnap.empty && foglietti.length === 0) return;
+            if (oldSongs.length === 0) return;
 
             if (!confirm(
-                `Trovati dati con il vecchio nome "libretti".\n\n` +
-                `Vuoi rinominarli automaticamente in "foglietti"?\n` +
-                `L'operazione è non distruttiva: i vecchi documenti verranno eliminati solo dopo la copia.`
+                `Trovati ${oldSongs.length} canti nel vecchio formato\n` +
+                `(con scorta e foglietto come campi diretti sul canto).\n\n` +
+                `Vuoi migrare automaticamente al nuovo formato?\n` +
+                `Verranno creati foglietti separati e i dati collegati.`
             )) return;
 
-            // Copia libretti → foglietti, costruendo la mappa old_id → new_id
-            const idMap = new Map(); // libretto_id → foglietto_id
-            for (const d of librettiSnap.docs) {
-                const data = d.data();
+            const libMap = new Map();
+            for (const s of oldSongs) {
+                if (!s.booklet_number && !s.associated) continue;
+                const key = `${s.booklet_number ?? ''}|||${s.associated ?? ''}`;
+                if (!libMap.has(key)) {
+                    libMap.set(key, {
+                        number: s.booklet_number || '(senza numero)',
+                        associated: s.associated || '',
+                        stock: s.stock || 0,
+                    });
+                }
+            }
+            const libIdMap = new Map();
+            for (const [key, data] of libMap.entries()) {
                 const ref = await addDoc(collection(db, 'foglietti'), data);
                 foglietti.push({ id: ref.id, ...data });
-                idMap.set(d.id, ref.id);
+                libIdMap.set(key, ref.id);
             }
-
-            // Aggiorna il campo sui canti: libretto_id → foglietto_id
-            for (let i = 0; i < songsWithOldRef.length; i += 500) {
+            for (let i = 0; i < oldSongs.length; i += 500) {
                 const batch = writeBatch(db);
-                songsWithOldRef.slice(i, i + 500).forEach(s => {
+                oldSongs.slice(i, i + 500).forEach(s => {
+                    const hasLib = s.booklet_number || s.associated;
+                    const key = `${s.booklet_number ?? ''}|||${s.associated ?? ''}`;
                     batch.update(doc(db, 'canti', s.id), {
-                        foglietto_id: idMap.get(s.libretto_id) || null,
-                        libretto_id: deleteField(),
+                        foglietto_id: hasLib ? (libIdMap.get(key) || null) : null,
+                        stock: deleteField(),
+                        booklet_number: deleteField(),
+                        associated: deleteField(),
                     });
                 });
                 await batch.commit();
             }
-
-            // Elimina vecchi documenti "libretti"
-            for (let i = 0; i < librettiSnap.docs.length; i += 500) {
-                const batch = writeBatch(db);
-                librettiSnap.docs.slice(i, i + 500).forEach(d => batch.delete(d.ref));
-                await batch.commit();
-            }
-
-            // Aggiorna in memoria
             songs = songs.map(s => {
-                if (s.libretto_id === undefined) return s;
-                return { ...s, foglietto_id: idMap.get(s.libretto_id) || null, libretto_id: undefined };
+                if (s.booklet_number === undefined && s.associated === undefined) return s;
+                const hasLib = s.booklet_number || s.associated;
+                const key = `${s.booklet_number ?? ''}|||${s.associated ?? ''}`;
+                const { stock, booklet_number, associated, ...rest } = s;
+                return { ...rest, foglietto_id: hasLib ? (libIdMap.get(key) || null) : null };
             });
-
-            toast(`Rinomina completata: ${librettiSnap.size} fogliett${librettiSnap.size === 1 ? 'o migrato' : 'i migrati'}.`, 4000);
+            toast(`Migrazione completata: ${libMap.size} fogliett${libMap.size === 1 ? 'o creato' : 'i creati'}.`, 4000);
         }
 
         /* ──────────────────────────────────────────
@@ -434,8 +439,10 @@
             btn.disabled = false;
         };
 
-        window.deleteSong = async function (id, title) {
-            if (!confirm(`Eliminare "${title}"?`)) return;
+        window.deleteSong = async function (id) {
+            const s = songs.find(s => s.id === id);
+            if (!s) return;
+            if (!confirm(`Eliminare "${s.title}"?`)) return;
             try {
                 await deleteDoc(doc(db, 'canti', id));
                 songs = songs.filter(s => s.id !== id);
@@ -469,7 +476,6 @@
                     const ref = await addDoc(collection(db, 'foglietti'), { number, associated, stock });
                     foglietti.push({ id: ref.id, number, associated, stock });
                     toast('Foglietto aggiunto');
-                    // Se il modal era stato aperto dalla scheda canto, pre-seleziona il nuovo foglietto
                     if (fogliettoFromSong) populateFogliettoSelect(ref.id);
                 }
                 closeFogliettoModal();
@@ -514,9 +520,8 @@
             }
         };
 
-        /* Aggiorna la scorta su un foglietto (chiamata dall'inline edit sia nella tabella canti che in quella foglietti) */
         window.saveFogliettoStock = async function (librId, val) {
-            const stock = parseInt(val) || 0;
+            const stock = Math.max(0, parseInt(val) || 0);
             try {
                 await updateDoc(doc(db, 'foglietti', librId), { stock });
                 const l = foglietti.find(l => l.id === librId);
@@ -532,24 +537,25 @@
 
         /* ──────────────────────────────────────────
            RENDER – TABELLA CANTI
+           Una riga per canto. La scorta mostrata è quella del foglietto
+           collegato, quindi può ripetersi su più righe: è solo una
+           visualizzazione, il conteggio reale è per foglietto.
         ────────────────────────────────────────── */
         window.renderTable = function () {
             const q = document.getElementById('search').value.toLowerCase();
             const fa = document.getElementById('filter-assoc').value;
 
-            // Arricchisci ogni canto con i dati del suo foglietto
             const enriched = songs.map(s => {
                 const lib = foglietti.find(l => l.id === s.foglietto_id) || null;
                 return {
                     ...s,
                     booklet_number: lib?.number ?? '',
                     associated: lib?.associated ?? '',
-                    stock: lib?.stock ?? null,   // null = nessun foglietto
+                    stock: lib?.stock ?? null,
                     foglietto: lib,
                 };
             });
 
-            // Filtro
             const filtered = enriched.filter(s => {
                 const matchQ = !q || s.title.toLowerCase().includes(q)
                     || s.booklet_number.toLowerCase().includes(q)
@@ -558,7 +564,6 @@
                 return matchQ && matchAssoc;
             });
 
-            // Ordina
             filtered.sort((a, b) => {
                 let va = a[sortCol] ?? '', vb = b[sortCol] ?? '';
                 if (sortCol === 'stock') {
@@ -581,8 +586,7 @@
                 return;
             }
 
-            // Fix #1: pre-calcola quanti canti condividono ogni foglietto,
-            // così possiamo mostrare un badge "×N" che chiarisce che la scorta è condivisa.
+            // Quanti canti condividono lo stesso foglietto → badge ×N
             const fogliettoSongCount = new Map();
             songs.forEach(s => {
                 if (s.foglietto_id)
@@ -595,19 +599,16 @@
                 const cls = st === null ? '' : st === 0 ? 'zero' : st <= 2 ? 'low' : 'ok';
                 const stLbl = st === null ? '—' : st;
 
-                // Badge condivisione: compare solo se il foglietto è usato da più di un canto
                 const sharedN = libId ? (fogliettoSongCount.get(libId) || 1) : 1;
                 const sharedBadge = sharedN > 1
                     ? `<span title="Scorta condivisa con altri ${sharedN - 1} cant${sharedN === 2 ? 'o' : 'i'} dello stesso foglietto"
                              style="color:var(--muted);font-size:11px;margin-left:4px;cursor:default;">×${sharedN}</span>`
                     : '';
 
-                // Il pill ha id univoco per song (per l'inline edit); la scorta deriva dal foglietto
                 const stockCell = st !== null
                     ? `<span class="stock-pill ${cls}" id="stock-display-${s.id}">${stLbl}</span>${sharedBadge}`
                     : `<span style="color:var(--muted)">—</span>`;
 
-                // Il bottone "modifica scorta" aggiorna il foglietto (non il canto)
                 const stockBtn = libId
                     ? `<button class="btn btn-ghost btn-sm" onclick="editStock('${s.id}','${libId}',${st ?? 0})" title="Modifica scorta del foglietto"><i class="fa-solid fa-plus-minus"></i></button>`
                     : '';
@@ -620,7 +621,7 @@
                     <td class="col-actions">
                         ${stockBtn}
                         <button class="btn btn-ghost btn-sm" onclick="openEditModal('${s.id}')" title="Modifica canto"><i class="fa-solid fa-pencil"></i></button>
-                        <button class="btn btn-ghost btn-sm" onclick="deleteSong('${s.id}','${esc(s.title).replace(/'/g, "\\'")}')"><i class="fa-solid fa-trash"></i></button>
+                        <button class="btn btn-ghost btn-sm" onclick="deleteSong('${s.id}')" title="Elimina canto"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 </tr>`;
             }).join('');
@@ -633,10 +634,14 @@
             const inp = document.createElement('input');
             inp.type = 'number'; inp.min = 0; inp.value = current;
             inp.className = 'stock-input';
-            inp.onblur = () => saveFogliettoStock(librId, inp.value);
+            inp.style.width = '64px';
+            let committed = false;
+            const commit = () => { if (committed) return; committed = true; saveFogliettoStock(librId, inp.value); };
+            const cancel = () => { if (committed) return; committed = true; renderTable(); };
+            inp.onblur = commit;
             inp.onkeydown = e => {
-                if (e.key === 'Enter') inp.blur();
-                if (e.key === 'Escape') renderTable();
+                if (e.key === 'Enter') { e.preventDefault(); inp.blur(); }
+                if (e.key === 'Escape') { e.preventDefault(); inp.onblur = null; cancel(); }
             };
             el.replaceWith(inp);
             inp.focus(); inp.select();
@@ -680,11 +685,11 @@
                             <td style="padding:8px;">${esc(l.number)}</td>
                             <td style="padding:8px;color:var(--muted);">${esc(l.associated || '—')}</td>
                             <td style="text-align:center;padding:8px;">
-                                <span class="stock-pill ${cls}" id="lib-stock-${l.id}">${st}</span>
+                                <span class="stock-pill ${cls}" id="lib-stock-modal-${l.id}">${st}</span>
                             </td>
                             <td style="text-align:center;padding:8px;color:var(--muted);">${count}</td>
                             <td style="padding:8px;white-space:nowrap;">
-                                <button class="btn btn-ghost btn-sm" onclick="editLibStock('${l.id}',${st})" title="Modifica scorta"><i class="fa-solid fa-plus-minus"></i></button>
+                                <button class="btn btn-ghost btn-sm" onclick="editLibStockModal('${l.id}',${st})" title="Modifica scorta"><i class="fa-solid fa-plus-minus"></i></button>
                                 <button class="btn btn-ghost btn-sm" onclick="openFogliettoModal('${l.id}',false)" title="Modifica"><i class="fa-solid fa-pencil"></i></button>
                                 <button class="btn btn-ghost btn-sm" onclick="deleteFoglietto('${l.id}')"><i class="fa-solid fa-trash"></i></button>
                             </td>
@@ -694,17 +699,20 @@
             </table>`;
         }
 
-        window.editLibStock = function (librId, current) {
-            const el = document.getElementById('lib-stock-' + librId);
+        window.editLibStockModal = function (librId, current) {
+            const el = document.getElementById('lib-stock-modal-' + librId);
             if (!el) return;
             const inp = document.createElement('input');
             inp.type = 'number'; inp.min = 0; inp.value = current;
             inp.className = 'stock-input';
             inp.style.width = '64px';
-            inp.onblur = () => saveFogliettoStock(librId, inp.value);
+            let committed = false;
+            const commit = () => { if (committed) return; committed = true; saveFogliettoStock(librId, inp.value); };
+            const cancel = () => { if (committed) return; committed = true; renderFogliettiTable(); };
+            inp.onblur = commit;
             inp.onkeydown = e => {
-                if (e.key === 'Enter') inp.blur();
-                if (e.key === 'Escape') renderFogliettiTable();
+                if (e.key === 'Enter') { e.preventDefault(); inp.blur(); }
+                if (e.key === 'Escape') { e.preventDefault(); inp.onblur = null; cancel(); }
             };
             el.replaceWith(inp);
             inp.focus(); inp.select();
@@ -715,9 +723,11 @@
         ────────────────────────────────────────── */
         function populateFogliettoSelect(selectedId) {
             const sel = document.getElementById('f-foglietto');
-            const sorted = [...foglietti].sort((a, b) =>
-                String(a.number).localeCompare(String(b.number), 'it')
-            );
+            const sorted = [...foglietti].sort((a, b) => {
+                const c = String(a.number).localeCompare(String(b.number), 'it');
+                if (c !== 0) return c;
+                return String(a.associated || '').localeCompare(String(b.associated || ''), 'it');
+            });
             sel.innerHTML = '<option value="">— Nessun foglietto —</option>' +
                 sorted.map(l =>
                     `<option value="${l.id}" ${l.id === selectedId ? 'selected' : ''}>${esc(l.number)}` +
@@ -795,11 +805,12 @@
         ────────────────────────────────────────── */
         window.openImportModal = () => {
             csvRows = [];
-            document.getElementById('f-csv').value = '';
+            const fileInput = document.getElementById('f-csv');
+            fileInput.value = '';
+            fileInput.onchange = handleCSVFile;
             document.getElementById('import-preview').textContent = '';
             document.getElementById('btn-import').disabled = true;
             document.getElementById('modal-import').classList.add('open');
-            document.getElementById('f-csv').addEventListener('change', handleCSVFile, { once: true });
         };
 
         window.closeImportModal = (e) => {
@@ -814,6 +825,11 @@
             reader.onload = ev => {
                 const raw = ev.target.result.replace(/^\uFEFF/, '');
                 const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+                if (lines.length === 0) {
+                    document.getElementById('import-preview').textContent = 'File vuoto.';
+                    document.getElementById('btn-import').disabled = true;
+                    return;
+                }
                 const headers = lines[0].split(';').map(h => h.trim().toLowerCase());
                 const col = name => {
                     const aliases = {
@@ -845,8 +861,8 @@
             btn.disabled = true;
             btn.textContent = 'Importando…';
 
-            const existingTitles = new Set(songs.map(s => s.title.toLowerCase()));
-            const toAdd = csvRows.filter(r => !existingTitles.has(r.title.toLowerCase()));
+            const existingTitles = new Set(songs.map(s => s.title.trim().toLowerCase()));
+            const toAdd = csvRows.filter(r => !existingTitles.has(r.title.trim().toLowerCase()));
 
             if (toAdd.length === 0) {
                 toast('Nessun canto nuovo da aggiungere.', 3000);
@@ -855,30 +871,30 @@
                 return;
             }
 
-            // Fix #3 + #6: costruisci la mappa delle combo in due passate.
-            // Prima passata: raccogli la scorta per ogni combo (l'ultima riga del CSV vince,
-            // così non si perde nessun valore e non si crea mai un duplicato).
+            const norm = s => String(s || '').trim();
             const libKeyMap = new Map();
             const libStockMap = new Map();
             for (const row of toAdd) {
                 if (!row.booklet_number && !row.associated) continue;
-                const key = `${row.booklet_number}|||${row.associated}`;
-                libStockMap.set(key, row.stock); // ultima riga vince
+                const key = `${norm(row.booklet_number)}|||${norm(row.associated).toLowerCase()}`;
+                libStockMap.set(key, row.stock);
             }
-            // Seconda passata: crea i foglietti nuovi e aggiorna la scorta di quelli già esistenti.
             for (const [key, stock] of libStockMap.entries()) {
-                const [booklet_number, associated] = key.split('|||');
+                const [booklet_number, associatedLower] = key.split('|||');
                 const existing = foglietti.find(l =>
-                    (l.number || '') === booklet_number && (l.associated || '') === associated
+                    norm(l.number) === booklet_number && norm(l.associated).toLowerCase() === associatedLower
                 );
                 if (existing) {
                     libKeyMap.set(key, existing.id);
-                    // Fix #3: aggiorna la scorta se il CSV porta un valore diverso
-                    if (existing.stock !== stock) {
+                    if ((existing.stock || 0) !== stock) {
                         await updateDoc(doc(db, 'foglietti', existing.id), { stock });
                         existing.stock = stock;
                     }
                 } else {
+                    const associated = toAdd.find(r =>
+                        norm(r.booklet_number) === booklet_number &&
+                        norm(r.associated).toLowerCase() === associatedLower
+                    )?.associated ?? '';
                     const ref = await addDoc(collection(db, 'foglietti'), {
                         number: booklet_number, associated, stock,
                     });
@@ -891,10 +907,11 @@
                 for (let i = 0; i < toAdd.length; i += 500) {
                     const batch = writeBatch(db);
                     toAdd.slice(i, i + 500).forEach(row => {
-                        const key = (row.booklet_number || row.associated) ? `${row.booklet_number}|||${row.associated}` : null;
+                        const hasLib = row.booklet_number || row.associated;
+                        const key = hasLib ? `${norm(row.booklet_number)}|||${norm(row.associated).toLowerCase()}` : null;
                         const foglietto_id = key ? (libKeyMap.get(key) || null) : null;
                         const ref = doc(collection(db, 'canti'));
-                        batch.set(ref, { title: row.title, foglietto_id });
+                        batch.set(ref, { title: row.title.trim(), foglietto_id });
                     });
                     await batch.commit();
                 }
@@ -910,13 +927,16 @@
 
         /* ──────────────────────────────────────────
            EXPORT CSV
-           (mantiene lo stesso formato: title; booklet_number; associated; stock)
         ────────────────────────────────────────── */
         window.downloadCSV = function () {
             const header = 'title;booklet_number;associated;stock';
             const rows = songs.map(s => {
                 const lib = foglietti.find(l => l.id === s.foglietto_id);
-                return [s.title, lib?.number || '', lib?.associated || '', lib?.stock ?? ''].join(';');
+                const safe = v => {
+                    const str = String(v ?? '');
+                    return /[;"\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+                };
+                return [safe(s.title), safe(lib?.number || ''), safe(lib?.associated || ''), lib?.stock ?? ''].join(';');
             });
             const blob = new Blob(
                 ['\uFEFF' + header + '\n' + rows.join('\n')],
@@ -945,12 +965,12 @@
         ────────────────────────────────────────── */
         function refreshStats() {
             document.getElementById('stat-total').textContent = songs.length;
-            // Fix #5: consideriamo solo foglietti effettivamente collegati ad almeno un canto,
-            // così i foglietti orfani (senza canti) non inquinano le stats.
-            const usedIds = new Set(songs.map(s => s.foglietto_id).filter(Boolean));
-            const activeFogl = foglietti.filter(l => usedIds.has(l.id));
-            const totalStock = activeFogl.reduce((a, l) => a + (l.stock || 0), 0);
-            const lowCount = activeFogl.filter(l => (l.stock || 0) <= 2).length;
+            // La scorta è del foglietto: si somma UNA VOLTA per foglietto,
+            // indipendentemente da quanti canti vi sono collegati.
+            // Così il numero "Copie in magazzino" NON si moltiplica
+            // anche se in tabella la stessa scorta appare su più righe.
+            const totalStock = foglietti.reduce((a, l) => a + (l.stock || 0), 0);
+            const lowCount = foglietti.filter(l => (l.stock || 0) <= 2).length;
             document.getElementById('stat-stock').textContent = totalStock;
             document.getElementById('stat-low').textContent = lowCount;
         }
@@ -1005,7 +1025,8 @@
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;');
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
         }
 
         function ts() {
