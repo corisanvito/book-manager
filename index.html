@@ -43,8 +43,8 @@
                 Trovi questi valori in <strong>Firebase Console → Impostazioni progetto → Le tue app → SDK setup and
                     configuration</strong>.
             </p>
-            <div style="display:flex;gap:8px;margin-top:20px;">
-                <button class="btn btn-primary" onclick="saveConfig()" style="flex:1">Salva e continua</button>
+            <div class="config-actions">
+                <button class="btn btn-primary btn-block" onclick="saveConfig()">Salva e continua</button>
             </div>
         </div>
     </div>
@@ -75,7 +75,7 @@
                 <div class="stat-lbl">Copie in magazzino</div>
             </div>
             <div class="stat">
-                <div class="stat-val" id="stat-low" style="color:var(--danger)">—</div>
+                <div class="stat-val stat-val-danger" id="stat-low">—</div>
                 <div class="stat-lbl">Foglietti esauriti/bassi (≤ 2)</div>
             </div>
         </div>
@@ -90,7 +90,7 @@
                 <input id="search" type="search" placeholder="Cerca per titolo, foglietto o associazione…"
                     oninput="renderTable()" />
             </div>
-            <select id="filter-assoc" class="btn btn-outline" onchange="renderTable()" style="padding:8px 12px;">
+            <select id="filter-assoc" class="btn btn-outline select-filter" onchange="renderTable()">
                 <option value="">Tutte le associazioni</option>
             </select>
         </div>
@@ -121,9 +121,8 @@
             <div class="field"><label>Titolo *</label><input id="f-title" type="text" /></div>
             <div class="field">
                 <label>Foglietto</label>
-                <div style="display:flex;gap:8px;align-items:center;">
-                    <select id="f-foglietto"
-                        style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:14px;background:var(--surface,#fff);color:var(--text,#111);">
+                <div class="field-inline">
+                    <select id="f-foglietto" class="select-inline">
                         <option value="">— Nessun foglietto —</option>
                     </select>
                     <button class="btn btn-outline btn-sm" onclick="openFogliettoModalFromSong()" type="button">+
@@ -139,14 +138,13 @@
 
     <!-- ── MODAL: Lista foglietti ── -->
     <div class="overlay" id="modal-foglietti" onclick="closeFogliettiModal(event)">
-        <div class="modal" style="width:min(1100px,95vw);height:85vh;display:flex;flex-direction:column;">
-            <div class="modal-title"
-                style="display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+        <div class="modal modal-foglietti">
+            <div class="modal-title modal-title-row">
                 <span>Gestisci foglietti</span>
                 <button class="btn btn-primary btn-sm" onclick="openFogliettoModal(null, false)">+ Aggiungi</button>
             </div>
-            <div id="foglietti-table-wrap" style="overflow-y:auto;flex:1;margin-top:12px;"></div>
-            <div class="modal-actions" style="flex-shrink:0;margin-top:12px;">
+            <div id="foglietti-table-wrap" class="foglietti-scroll"></div>
+            <div class="modal-actions modal-actions-footer">
                 <button class="btn btn-outline" onclick="closeFogliettiModal()">Chiudi</button>
             </div>
         </div>
@@ -173,7 +171,7 @@
     <div class="overlay" id="modal-import" onclick="closeImportModal(event)">
         <div class="modal">
             <div class="modal-title">Importa CSV</div>
-            <p style="color:var(--muted);font-size:13px;margin-bottom:16px;">
+            <p class="modal-help">
                 Il CSV deve avere il separatore <code>;</code> e le colonne:<br>
                 <code>title; booklet_number; associated; stock</code><br><br>
                 Per ogni combinazione unica di <em>booklet_number + associated</em> viene creato
@@ -181,7 +179,7 @@
                 (confronto per titolo).
             </p>
             <div class="field"><label>File CSV</label><input id="f-csv" type="file" accept=".csv" /></div>
-            <div id="import-preview" style="font-size:12px;color:var(--muted);margin-top:8px;"></div>
+            <div id="import-preview" class="import-preview"></div>
             <div class="modal-actions">
                 <button class="btn btn-outline" onclick="closeImportModal()">Annulla</button>
                 <button class="btn btn-primary" id="btn-import" onclick="doImport()" disabled>Importa</button>
@@ -586,7 +584,6 @@
                 return;
             }
 
-            // Quanti canti condividono lo stesso foglietto → badge ×N
             const fogliettoSongCount = new Map();
             songs.forEach(s => {
                 if (s.foglietto_id)
@@ -601,22 +598,21 @@
 
                 const sharedN = libId ? (fogliettoSongCount.get(libId) || 1) : 1;
                 const sharedBadge = sharedN > 1
-                    ? `<span title="Scorta condivisa con altri ${sharedN - 1} cant${sharedN === 2 ? 'o' : 'i'} dello stesso foglietto"
-                             style="color:var(--muted);font-size:11px;margin-left:4px;cursor:default;">×${sharedN}</span>`
+                    ? `<span class="shared-badge" title="Scorta condivisa con altri ${sharedN - 1} cant${sharedN === 2 ? 'o' : 'i'} dello stesso foglietto">×${sharedN}</span>`
                     : '';
 
                 const stockCell = st !== null
                     ? `<span class="stock-pill ${cls}" id="stock-display-${s.id}">${stLbl}</span>${sharedBadge}`
-                    : `<span style="color:var(--muted)">—</span>`;
+                    : `<span class="muted-dash">—</span>`;
 
                 const stockBtn = libId
                     ? `<button class="btn btn-ghost btn-sm" onclick="editStock('${s.id}','${libId}',${st ?? 0})" title="Modifica scorta del foglietto"><i class="fa-solid fa-plus-minus"></i></button>`
                     : '';
 
                 return `<tr>
-                    <td class="col-title" style="font-weight:500">${esc(s.title)}</td>
-                    <td class="col-booklet" style="color:var(--muted)">${esc(s.booklet_number || '—')}</td>
-                    <td class="col-assoc"   style="color:var(--muted)">${esc(s.associated || '—')}</td>
+                    <td class="col-title cell-title">${esc(s.title)}</td>
+                    <td class="col-booklet cell-muted">${esc(s.booklet_number || '—')}</td>
+                    <td class="col-assoc cell-muted">${esc(s.associated || '—')}</td>
                     <td class="col-stock">${stockCell}</td>
                     <td class="col-actions">
                         ${stockBtn}
@@ -634,7 +630,6 @@
             const inp = document.createElement('input');
             inp.type = 'number'; inp.min = 0; inp.value = current;
             inp.className = 'stock-input';
-            inp.style.width = '64px';
             let committed = false;
             const commit = () => { if (committed) return; committed = true; saveFogliettoStock(librId, inp.value); };
             const cancel = () => { if (committed) return; committed = true; renderTable(); };
@@ -655,9 +650,7 @@
             if (!wrap) return;
 
             if (foglietti.length === 0) {
-                wrap.innerHTML = `<p style="color:var(--muted);text-align:center;padding:28px 0;">
-                    Nessun foglietto ancora. Aggiungine uno!
-                </p>`;
+                wrap.innerHTML = `<p class="foglietti-empty">Nessun foglietto ancora. Aggiungine uno!</p>`;
                 return;
             }
 
@@ -666,14 +659,14 @@
             );
 
             wrap.innerHTML = `
-            <table style="width:100%;border-collapse:collapse;font-size:14px;">
+            <table class="foglietti-table">
                 <thead>
-                    <tr style="border-bottom:2px solid var(--border);">
-                        <th style="text-align:left;padding:6px 8px;color:var(--muted);font-weight:500;font-size:12px;">N°/Nome</th>
-                        <th style="text-align:left;padding:6px 8px;color:var(--muted);font-weight:500;font-size:12px;">Associazione</th>
-                        <th style="text-align:center;padding:6px 8px;color:var(--muted);font-weight:500;font-size:12px;">Scorta</th>
-                        <th style="text-align:center;padding:6px 8px;color:var(--muted);font-weight:500;font-size:12px;">Canti</th>
-                        <th style="width:1%;"></th>
+                    <tr class="foglietti-thead-row">
+                        <th class="foglietti-th">N°/Nome</th>
+                        <th class="foglietti-th">Associazione</th>
+                        <th class="foglietti-th-center">Scorta</th>
+                        <th class="foglietti-th-center">Canti</th>
+                        <th class="foglietti-th-actions"></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -681,14 +674,14 @@
                 const count = songs.filter(s => s.foglietto_id === l.id).length;
                 const st = l.stock || 0;
                 const cls = st === 0 ? 'zero' : st <= 2 ? 'low' : 'ok';
-                return `<tr style="border-bottom:1px solid var(--border);">
-                            <td style="padding:8px;">${esc(l.number)}</td>
-                            <td style="padding:8px;color:var(--muted);">${esc(l.associated || '—')}</td>
-                            <td style="text-align:center;padding:8px;">
+                return `<tr class="foglietti-row">
+                            <td class="foglietti-td">${esc(l.number)}</td>
+                            <td class="foglietti-td foglietti-td-muted">${esc(l.associated || '—')}</td>
+                            <td class="foglietti-td-center">
                                 <span class="stock-pill ${cls}" id="lib-stock-modal-${l.id}">${st}</span>
                             </td>
-                            <td style="text-align:center;padding:8px;color:var(--muted);">${count}</td>
-                            <td style="padding:8px;white-space:nowrap;">
+                            <td class="foglietti-td-center foglietti-td-muted">${count}</td>
+                            <td class="foglietti-td-actions">
                                 <button class="btn btn-ghost btn-sm" onclick="editLibStockModal('${l.id}',${st})" title="Modifica scorta"><i class="fa-solid fa-plus-minus"></i></button>
                                 <button class="btn btn-ghost btn-sm" onclick="openFogliettoModal('${l.id}',false)" title="Modifica"><i class="fa-solid fa-pencil"></i></button>
                                 <button class="btn btn-ghost btn-sm" onclick="deleteFoglietto('${l.id}')"><i class="fa-solid fa-trash"></i></button>
@@ -705,7 +698,6 @@
             const inp = document.createElement('input');
             inp.type = 'number'; inp.min = 0; inp.value = current;
             inp.className = 'stock-input';
-            inp.style.width = '64px';
             let committed = false;
             const commit = () => { if (committed) return; committed = true; saveFogliettoStock(librId, inp.value); };
             const cancel = () => { if (committed) return; committed = true; renderFogliettiTable(); };
@@ -965,10 +957,6 @@
         ────────────────────────────────────────── */
         function refreshStats() {
             document.getElementById('stat-total').textContent = songs.length;
-            // La scorta è del foglietto: si somma UNA VOLTA per foglietto,
-            // indipendentemente da quanti canti vi sono collegati.
-            // Così il numero "Copie in magazzino" NON si moltiplica
-            // anche se in tabella la stessa scorta appare su più righe.
             const totalStock = foglietti.reduce((a, l) => a + (l.stock || 0), 0);
             const lowCount = foglietti.filter(l => (l.stock || 0) <= 2).length;
             document.getElementById('stat-stock').textContent = totalStock;

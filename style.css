@@ -163,6 +163,11 @@ main {
     font-size: 12px;
 }
 
+.btn-block {
+    width: 100%;
+    justify-content: center;
+}
+
 .btn:disabled {
     opacity: .5;
     cursor: not-allowed;
@@ -188,6 +193,10 @@ main {
 .stat-val {
     font-size: 22px;
     font-weight: 600;
+}
+
+.stat-val-danger {
+    color: var(--danger);
 }
 
 .stat-lbl {
@@ -268,6 +277,26 @@ tr:hover td {
 .col-actions {
     width: 16%;
     text-align: right;
+}
+
+/* celle con classi riutilizzabili */
+.cell-title {
+    font-weight: 500;
+}
+
+.cell-muted {
+    color: var(--muted);
+}
+
+.muted-dash {
+    color: var(--muted);
+}
+
+.shared-badge {
+    color: var(--muted);
+    font-size: 11px;
+    margin-left: 4px;
+    cursor: default;
 }
 
 /* stock pill */
@@ -371,6 +400,19 @@ tr:hover td {
     margin-bottom: 20px;
 }
 
+.modal-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.modal-help {
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 16px;
+}
+
 .field {
     margin-bottom: 16px;
 }
@@ -399,11 +441,115 @@ tr:hover td {
     border-color: var(--accent);
 }
 
+.field-inline {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.select-inline {
+    flex: 1;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    background: var(--surface);
+    color: var(--text);
+}
+
+.select-filter {
+    padding: 8px 12px;
+}
+
 .modal-actions {
     display: flex;
     gap: 8px;
     justify-content: flex-end;
     margin-top: 24px;
+}
+
+.modal-actions-footer {
+    flex-shrink: 0;
+    margin-top: 12px;
+}
+
+/* ── MODAL FOGLIETTI (variante grande) ── */
+.modal.modal-foglietti {
+    width: 1100px;
+    max-width: 95vw;
+    height: 85vh;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.foglietti-scroll {
+    overflow-y: auto;
+    flex: 1;
+    margin-top: 12px;
+}
+
+.foglietti-empty {
+    color: var(--muted);
+    text-align: center;
+    padding: 28px 0;
+}
+
+/* tabella dentro il modal foglietti */
+.foglietti-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.foglietti-thead-row {
+    border-bottom: 2px solid var(--border);
+}
+
+.foglietti-th,
+.foglietti-th-center {
+    text-align: left;
+    padding: 6px 8px;
+    color: var(--muted);
+    font-weight: 500;
+    font-size: 12px;
+}
+
+.foglietti-th-center {
+    text-align: center;
+}
+
+.foglietti-th-actions {
+    width: 1%;
+}
+
+.foglietti-row {
+    border-bottom: 1px solid var(--border);
+}
+
+.foglietti-td,
+.foglietti-td-center,
+.foglietti-td-actions {
+    padding: 8px;
+}
+
+.foglietti-td-center {
+    text-align: center;
+}
+
+.foglietti-td-muted {
+    color: var(--muted);
+}
+
+.foglietti-td-actions {
+    white-space: nowrap;
+}
+
+/* ── IMPORT CSV ── */
+.import-preview {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 8px;
 }
 
 /* ── TOAST ── */
@@ -466,12 +612,19 @@ tr:hover td {
     font-family: monospace;
 }
 
+.config-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 20px;
+}
+
 .config-note {
     font-size: 11px;
     color: var(--muted);
     margin-top: 8px;
 }
 
+/* ── RESPONSIVE ── */
 @media (max-width: 600px) {
 
     .col-assoc,
@@ -489,5 +642,10 @@ tr:hover td {
 
     .col-actions {
         width: 25%;
+    }
+
+    .modal.modal-foglietti {
+        width: 95vw;
+        height: 90vh;
     }
 }
