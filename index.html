@@ -99,10 +99,10 @@
             <table>
                 <thead>
                     <tr>
-                        <th class="col-title"   onclick="sortBy('title')"          id="th-title">Titolo</th>
-                        <th class="col-booklet" onclick="sortBy('booklet_number')" id="th-booklet">Foglietto</th>
-                        <th class="col-assoc"   onclick="sortBy('associated')"     id="th-assoc">Associazione</th>
-                        <th class="col-stock"   onclick="sortBy('stock')"          id="th-stock">Scorta</th>
+                        <th class="col-title" onclick="sortBy('title')" id="th-title">Titolo</th>
+                        <th class="col-booklet" onclick="sortBy('booklet_number')" id="th-booklet_number">Foglietto</th>
+                        <th class="col-assoc" onclick="sortBy('associated')" id="th-assoc">Associazione</th>
+                        <th class="col-stock" onclick="sortBy('stock')" id="th-stock">Scorta</th>
                         <th class="col-actions"></th>
                     </tr>
                 </thead>
@@ -126,7 +126,8 @@
                         style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:14px;background:var(--surface,#fff);color:var(--text,#111);">
                         <option value="">— Nessun foglietto —</option>
                     </select>
-                    <button class="btn btn-outline btn-sm" onclick="openFogliettoModalFromSong()" type="button">+ Nuovo</button>
+                    <button class="btn btn-outline btn-sm" onclick="openFogliettoModalFromSong()" type="button">+
+                        Nuovo</button>
                 </div>
             </div>
             <div class="modal-actions">
@@ -195,7 +196,7 @@
          FIREBASE SDK
     ═══════════════════════════════════════════════ -->
     <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+        import { initializeApp, getApps, getApp, deleteApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
         import {
             getFirestore, collection, getDocs, doc, addDoc, updateDoc,
             deleteDoc, writeBatch, deleteField
@@ -209,11 +210,11 @@
            Più canti sullo stesso foglietto condividono la stessa scorta.
         ────────────────────────────────────────── */
         let db;
-        let songs    = [];
+        let songs = [];
         let foglietti = [];
-        let editingId          = null;
-        let editingFogliettoId  = null;
-        let fogliettoFromSong   = false;
+        let editingId = null;
+        let editingFogliettoId = null;
+        let fogliettoFromSong = false;
         let sortCol = 'title', sortDir = 1;
         let csvRows = [];
 
@@ -222,18 +223,21 @@
         ────────────────────────────────────────── */
         window.saveConfig = function () {
             const cfg = {
-                apiKey:     document.getElementById('cfg-apiKey').value.trim(),
+                apiKey: document.getElementById('cfg-apiKey').value.trim(),
                 authDomain: document.getElementById('cfg-authDomain').value.trim(),
-                projectId:  document.getElementById('cfg-projectId').value.trim(),
-                appId:      document.getElementById('cfg-appId').value.trim(),
+                projectId: document.getElementById('cfg-projectId').value.trim(),
+                appId: document.getElementById('cfg-appId').value.trim(),
             };
             if (!cfg.apiKey || !cfg.projectId) { alert('Inserisci almeno API Key e Project ID.'); return; }
             localStorage.setItem('fbConfig', JSON.stringify(cfg));
             initFirebase(cfg);
         };
 
-        function initFirebase(cfg) {
+        async function initFirebase(cfg) {
             try {
+                // Fix #4: elimina l'app esistente prima di reinizializzare,
+                // così "Salva e continua" funziona anche la seconda volta.
+                if (getApps().length > 0) await deleteApp(getApp());
                 const app = initializeApp(cfg);
                 db = getFirestore(app);
                 document.getElementById('config-screen').style.display = 'none';
@@ -246,10 +250,10 @@
         const saved = localStorage.getItem('fbConfig');
         if (saved) {
             const cfg = JSON.parse(saved);
-            document.getElementById('cfg-apiKey').value     = cfg.apiKey     || '';
+            document.getElementById('cfg-apiKey').value = cfg.apiKey || '';
             document.getElementById('cfg-authDomain').value = cfg.authDomain || '';
-            document.getElementById('cfg-projectId').value  = cfg.projectId  || '';
-            document.getElementById('cfg-appId').value      = cfg.appId      || '';
+            document.getElementById('cfg-projectId').value = cfg.projectId || '';
+            document.getElementById('cfg-appId').value = cfg.appId || '';
             initFirebase(cfg);
         }
 
@@ -264,7 +268,7 @@
                     getDocs(collection(db, 'foglietti')),
                 ]);
                 foglietti = fogliettiSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-                songs     = cantiSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                songs = cantiSnap.docs.map(d => ({ id: d.id, ...d.data() }));
                 await migrateIfNeeded();
                 refreshStats();
                 refreshAssocFilter();
@@ -308,9 +312,9 @@
                     const key = `${s.booklet_number ?? ''}|||${s.associated ?? ''}`;
                     if (!libMap.has(key)) {
                         libMap.set(key, {
-                            number:     s.booklet_number || '(senza numero)',
-                            associated: s.associated    || '',
-                            stock:      s.stock         || 0,
+                            number: s.booklet_number || '(senza numero)',
+                            associated: s.associated || '',
+                            stock: s.stock || 0,
                         });
                     }
                 }
@@ -324,12 +328,12 @@
                     const batch = writeBatch(db);
                     oldSongs.slice(i, i + 500).forEach(s => {
                         const hasLib = s.booklet_number || s.associated;
-                        const key    = `${s.booklet_number ?? ''}|||${s.associated ?? ''}`;
+                        const key = `${s.booklet_number ?? ''}|||${s.associated ?? ''}`;
                         batch.update(doc(db, 'canti', s.id), {
-                            foglietto_id:   hasLib ? (libIdMap.get(key) || null) : null,
-                            stock:          deleteField(),
+                            foglietto_id: hasLib ? (libIdMap.get(key) || null) : null,
+                            stock: deleteField(),
                             booklet_number: deleteField(),
-                            associated:     deleteField(),
+                            associated: deleteField(),
                         });
                     });
                     await batch.commit();
@@ -337,7 +341,7 @@
                 songs = songs.map(s => {
                     if (s.stock === undefined && s.booklet_number === undefined) return s;
                     const hasLib = s.booklet_number || s.associated;
-                    const key    = `${s.booklet_number ?? ''}|||${s.associated ?? ''}`;
+                    const key = `${s.booklet_number ?? ''}|||${s.associated ?? ''}`;
                     return { id: s.id, title: s.title, foglietto_id: hasLib ? (libIdMap.get(key) || null) : null };
                 });
                 toast(`Migrazione completata: ${libMap.size} fogliett${libMap.size === 1 ? 'o creato' : 'i creati'}.`, 4000);
@@ -366,7 +370,7 @@
             const idMap = new Map(); // libretto_id → foglietto_id
             for (const d of librettiSnap.docs) {
                 const data = d.data();
-                const ref  = await addDoc(collection(db, 'foglietti'), data);
+                const ref = await addDoc(collection(db, 'foglietti'), data);
                 foglietti.push({ id: ref.id, ...data });
                 idMap.set(d.id, ref.id);
             }
@@ -377,7 +381,7 @@
                 songsWithOldRef.slice(i, i + 500).forEach(s => {
                     batch.update(doc(db, 'canti', s.id), {
                         foglietto_id: idMap.get(s.libretto_id) || null,
-                        libretto_id:  deleteField(),
+                        libretto_id: deleteField(),
                     });
                 });
                 await batch.commit();
@@ -403,7 +407,7 @@
            CANTI – CRUD
         ────────────────────────────────────────── */
         window.saveSong = async function () {
-            const title       = document.getElementById('f-title').value.trim();
+            const title = document.getElementById('f-title').value.trim();
             const foglietto_id = document.getElementById('f-foglietto').value || null;
             if (!title) { alert('Il titolo è obbligatorio.'); return; }
 
@@ -448,9 +452,9 @@
            FOGLIETTI – CRUD
         ────────────────────────────────────────── */
         window.saveFoglietto = async function () {
-            const number     = document.getElementById('fl-number').value.trim();
+            const number = document.getElementById('fl-number').value.trim();
             const associated = document.getElementById('fl-assoc').value.trim();
-            const stock      = parseInt(document.getElementById('fl-stock').value) || 0;
+            const stock = parseInt(document.getElementById('fl-stock').value) || 0;
             if (!number) { alert('Il numero/nome del foglietto è obbligatorio.'); return; }
 
             const btn = document.getElementById('btn-save-foglietto');
@@ -480,7 +484,7 @@
         };
 
         window.deleteFoglietto = async function (id) {
-            const lib       = foglietti.find(l => l.id === id);
+            const lib = foglietti.find(l => l.id === id);
             const refsCount = songs.filter(s => s.foglietto_id === id).length;
             const msg = refsCount > 0
                 ? `Il foglietto "${lib?.number}" è usato da ${refsCount} canto/i.\n\nEliminandolo quei canti rimarranno senza foglietto. Continuare?`
@@ -492,8 +496,8 @@
                     for (let i = 0; i < songs.length; i += 500) {
                         const batch = writeBatch(db);
                         songs.slice(i, i + 500)
-                             .filter(s => s.foglietto_id === id)
-                             .forEach(s => batch.update(doc(db, 'canti', s.id), { foglietto_id: null }));
+                            .filter(s => s.foglietto_id === id)
+                            .forEach(s => batch.update(doc(db, 'canti', s.id), { foglietto_id: null }));
                         await batch.commit();
                     }
                     songs = songs.map(s => s.foglietto_id === id ? { ...s, foglietto_id: null } : s);
@@ -530,7 +534,7 @@
            RENDER – TABELLA CANTI
         ────────────────────────────────────────── */
         window.renderTable = function () {
-            const q  = document.getElementById('search').value.toLowerCase();
+            const q = document.getElementById('search').value.toLowerCase();
             const fa = document.getElementById('filter-assoc').value;
 
             // Arricchisci ogni canto con i dati del suo foglietto
@@ -538,18 +542,18 @@
                 const lib = foglietti.find(l => l.id === s.foglietto_id) || null;
                 return {
                     ...s,
-                    booklet_number: lib?.number     ?? '',
-                    associated:     lib?.associated ?? '',
-                    stock:          lib?.stock      ?? null,   // null = nessun foglietto
-                    foglietto:       lib,
+                    booklet_number: lib?.number ?? '',
+                    associated: lib?.associated ?? '',
+                    stock: lib?.stock ?? null,   // null = nessun foglietto
+                    foglietto: lib,
                 };
             });
 
             // Filtro
             const filtered = enriched.filter(s => {
-                const matchQ     = !q  || s.title.toLowerCase().includes(q)
-                                       || s.booklet_number.toLowerCase().includes(q)
-                                       || s.associated.toLowerCase().includes(q);
+                const matchQ = !q || s.title.toLowerCase().includes(q)
+                    || s.booklet_number.toLowerCase().includes(q)
+                    || s.associated.toLowerCase().includes(q);
                 const matchAssoc = !fa || s.associated === fa;
                 return matchQ && matchAssoc;
             });
@@ -577,15 +581,30 @@
                 return;
             }
 
+            // Fix #1: pre-calcola quanti canti condividono ogni foglietto,
+            // così possiamo mostrare un badge "×N" che chiarisce che la scorta è condivisa.
+            const fogliettoSongCount = new Map();
+            songs.forEach(s => {
+                if (s.foglietto_id)
+                    fogliettoSongCount.set(s.foglietto_id, (fogliettoSongCount.get(s.foglietto_id) || 0) + 1);
+            });
+
             tbody.innerHTML = filtered.map(s => {
-                const st    = s.stock;
+                const st = s.stock;
                 const libId = s.foglietto_id;
-                const cls   = st === null ? '' : st === 0 ? 'zero' : st <= 2 ? 'low' : 'ok';
+                const cls = st === null ? '' : st === 0 ? 'zero' : st <= 2 ? 'low' : 'ok';
                 const stLbl = st === null ? '—' : st;
+
+                // Badge condivisione: compare solo se il foglietto è usato da più di un canto
+                const sharedN = libId ? (fogliettoSongCount.get(libId) || 1) : 1;
+                const sharedBadge = sharedN > 1
+                    ? `<span title="Scorta condivisa con altri ${sharedN - 1} cant${sharedN === 2 ? 'o' : 'i'} dello stesso foglietto"
+                             style="color:var(--muted);font-size:11px;margin-left:4px;cursor:default;">×${sharedN}</span>`
+                    : '';
 
                 // Il pill ha id univoco per song (per l'inline edit); la scorta deriva dal foglietto
                 const stockCell = st !== null
-                    ? `<span class="stock-pill ${cls}" id="stock-display-${s.id}">${stLbl}</span>`
+                    ? `<span class="stock-pill ${cls}" id="stock-display-${s.id}">${stLbl}</span>${sharedBadge}`
                     : `<span style="color:var(--muted)">—</span>`;
 
                 // Il bottone "modifica scorta" aggiorna il foglietto (non il canto)
@@ -596,12 +615,12 @@
                 return `<tr>
                     <td class="col-title" style="font-weight:500">${esc(s.title)}</td>
                     <td class="col-booklet" style="color:var(--muted)">${esc(s.booklet_number || '—')}</td>
-                    <td class="col-assoc"   style="color:var(--muted)">${esc(s.associated    || '—')}</td>
+                    <td class="col-assoc"   style="color:var(--muted)">${esc(s.associated || '—')}</td>
                     <td class="col-stock">${stockCell}</td>
                     <td class="col-actions">
                         ${stockBtn}
                         <button class="btn btn-ghost btn-sm" onclick="openEditModal('${s.id}')" title="Modifica canto"><i class="fa-solid fa-pencil"></i></button>
-                        <button class="btn btn-ghost btn-sm" onclick="deleteSong('${s.id}','${esc(s.title).replace(/'/g,"\\'")}')"><i class="fa-solid fa-trash"></i></button>
+                        <button class="btn btn-ghost btn-sm" onclick="deleteSong('${s.id}','${esc(s.title).replace(/'/g, "\\'")}')"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 </tr>`;
             }).join('');
@@ -614,9 +633,9 @@
             const inp = document.createElement('input');
             inp.type = 'number'; inp.min = 0; inp.value = current;
             inp.className = 'stock-input';
-            inp.onblur    = () => saveFogliettoStock(librId, inp.value);
+            inp.onblur = () => saveFogliettoStock(librId, inp.value);
             inp.onkeydown = e => {
-                if (e.key === 'Enter')  inp.blur();
+                if (e.key === 'Enter') inp.blur();
                 if (e.key === 'Escape') renderTable();
             };
             el.replaceWith(inp);
@@ -654,10 +673,10 @@
                 </thead>
                 <tbody>
                     ${sorted.map(l => {
-                        const count = songs.filter(s => s.foglietto_id === l.id).length;
-                        const st    = l.stock || 0;
-                        const cls   = st === 0 ? 'zero' : st <= 2 ? 'low' : 'ok';
-                        return `<tr style="border-bottom:1px solid var(--border);">
+                const count = songs.filter(s => s.foglietto_id === l.id).length;
+                const st = l.stock || 0;
+                const cls = st === 0 ? 'zero' : st <= 2 ? 'low' : 'ok';
+                return `<tr style="border-bottom:1px solid var(--border);">
                             <td style="padding:8px;">${esc(l.number)}</td>
                             <td style="padding:8px;color:var(--muted);">${esc(l.associated || '—')}</td>
                             <td style="text-align:center;padding:8px;">
@@ -670,7 +689,7 @@
                                 <button class="btn btn-ghost btn-sm" onclick="deleteFoglietto('${l.id}')"><i class="fa-solid fa-trash"></i></button>
                             </td>
                         </tr>`;
-                    }).join('')}
+            }).join('')}
                 </tbody>
             </table>`;
         }
@@ -682,9 +701,9 @@
             inp.type = 'number'; inp.min = 0; inp.value = current;
             inp.className = 'stock-input';
             inp.style.width = '64px';
-            inp.onblur    = () => saveFogliettoStock(librId, inp.value);
+            inp.onblur = () => saveFogliettoStock(librId, inp.value);
             inp.onkeydown = e => {
-                if (e.key === 'Enter')  inp.blur();
+                if (e.key === 'Enter') inp.blur();
                 if (e.key === 'Escape') renderFogliettiTable();
             };
             el.replaceWith(inp);
@@ -695,7 +714,7 @@
            MODALS – CANTI
         ────────────────────────────────────────── */
         function populateFogliettoSelect(selectedId) {
-            const sel    = document.getElementById('f-foglietto');
+            const sel = document.getElementById('f-foglietto');
             const sorted = [...foglietti].sort((a, b) =>
                 String(a.number).localeCompare(String(b.number), 'it')
             );
@@ -747,17 +766,17 @@
 
         window.openFogliettoModal = (id = null, fromSong = false) => {
             editingFogliettoId = id;
-            fogliettoFromSong  = fromSong;
+            fogliettoFromSong = fromSong;
             document.getElementById('modal-foglietto-title').textContent = id ? 'Modifica foglietto' : 'Aggiungi foglietto';
             if (id) {
                 const l = foglietti.find(l => l.id === id);
-                document.getElementById('fl-number').value = l?.number     || '';
-                document.getElementById('fl-assoc').value  = l?.associated || '';
-                document.getElementById('fl-stock').value  = l?.stock      ?? 0;
+                document.getElementById('fl-number').value = l?.number || '';
+                document.getElementById('fl-assoc').value = l?.associated || '';
+                document.getElementById('fl-stock').value = l?.stock ?? 0;
             } else {
                 document.getElementById('fl-number').value = '';
-                document.getElementById('fl-assoc').value  = '';
-                document.getElementById('fl-stock').value  = 0;
+                document.getElementById('fl-assoc').value = '';
+                document.getElementById('fl-stock').value = 0;
             }
             document.getElementById('modal-foglietto').classList.add('open');
             document.getElementById('fl-number').focus();
@@ -793,26 +812,26 @@
             if (!file) return;
             const reader = new FileReader();
             reader.onload = ev => {
-                const raw   = ev.target.result.replace(/^\uFEFF/, '');
+                const raw = ev.target.result.replace(/^\uFEFF/, '');
                 const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
                 const headers = lines[0].split(';').map(h => h.trim().toLowerCase());
                 const col = name => {
                     const aliases = {
-                        title:          ['title', 'titolo'],
+                        title: ['title', 'titolo'],
                         booklet_number: ['booklet_number', 'numero', 'foglietto', 'n° lib', 'n°foglietto'],
-                        associated:     ['associated', 'associazione'],
-                        stock:          ['stock', 'scorta'],
+                        associated: ['associated', 'associazione'],
+                        stock: ['stock', 'scorta'],
                     };
                     return (aliases[name] || [name]).map(a => headers.indexOf(a)).find(i => i >= 0) ?? -1;
                 };
                 csvRows = lines.slice(1).map(l => {
-                    const cols  = l.split(';');
+                    const cols = l.split(';');
                     const title = col('title') >= 0 ? (cols[col('title')] || '').trim() : '';
                     return {
                         title,
                         booklet_number: col('booklet_number') >= 0 ? (cols[col('booklet_number')] || '').trim() : '',
-                        associated:     col('associated')     >= 0 ? (cols[col('associated')]     || '').trim() : '',
-                        stock:          parseInt(col('stock') >= 0 ? cols[col('stock')] || '0' : '0') || 0,
+                        associated: col('associated') >= 0 ? (cols[col('associated')] || '').trim() : '',
+                        stock: parseInt(col('stock') >= 0 ? cols[col('stock')] || '0' : '0') || 0,
                     };
                 }).filter(r => r.title);
                 document.getElementById('import-preview').textContent = `${csvRows.length} righe trovate.`;
@@ -836,22 +855,34 @@
                 return;
             }
 
-            // Costruisci/trova foglietti per ogni combo unica (booklet_number, associated)
+            // Fix #3 + #6: costruisci la mappa delle combo in due passate.
+            // Prima passata: raccogli la scorta per ogni combo (l'ultima riga del CSV vince,
+            // così non si perde nessun valore e non si crea mai un duplicato).
             const libKeyMap = new Map();
+            const libStockMap = new Map();
             for (const row of toAdd) {
                 if (!row.booklet_number && !row.associated) continue;
                 const key = `${row.booklet_number}|||${row.associated}`;
-                if (libKeyMap.has(key)) continue;
+                libStockMap.set(key, row.stock); // ultima riga vince
+            }
+            // Seconda passata: crea i foglietti nuovi e aggiorna la scorta di quelli già esistenti.
+            for (const [key, stock] of libStockMap.entries()) {
+                const [booklet_number, associated] = key.split('|||');
                 const existing = foglietti.find(l =>
-                    (l.number || '') === row.booklet_number && (l.associated || '') === row.associated
+                    (l.number || '') === booklet_number && (l.associated || '') === associated
                 );
                 if (existing) {
                     libKeyMap.set(key, existing.id);
+                    // Fix #3: aggiorna la scorta se il CSV porta un valore diverso
+                    if (existing.stock !== stock) {
+                        await updateDoc(doc(db, 'foglietti', existing.id), { stock });
+                        existing.stock = stock;
+                    }
                 } else {
                     const ref = await addDoc(collection(db, 'foglietti'), {
-                        number: row.booklet_number, associated: row.associated, stock: row.stock,
+                        number: booklet_number, associated, stock,
                     });
-                    foglietti.push({ id: ref.id, number: row.booklet_number, associated: row.associated, stock: row.stock });
+                    foglietti.push({ id: ref.id, number: booklet_number, associated, stock });
                     libKeyMap.set(key, ref.id);
                 }
             }
@@ -860,7 +891,7 @@
                 for (let i = 0; i < toAdd.length; i += 500) {
                     const batch = writeBatch(db);
                     toAdd.slice(i, i + 500).forEach(row => {
-                        const key         = (row.booklet_number || row.associated) ? `${row.booklet_number}|||${row.associated}` : null;
+                        const key = (row.booklet_number || row.associated) ? `${row.booklet_number}|||${row.associated}` : null;
                         const foglietto_id = key ? (libKeyMap.get(key) || null) : null;
                         const ref = doc(collection(db, 'canti'));
                         batch.set(ref, { title: row.title, foglietto_id });
@@ -883,7 +914,7 @@
         ────────────────────────────────────────── */
         window.downloadCSV = function () {
             const header = 'title;booklet_number;associated;stock';
-            const rows   = songs.map(s => {
+            const rows = songs.map(s => {
                 const lib = foglietti.find(l => l.id === s.foglietto_id);
                 return [s.title, lib?.number || '', lib?.associated || '', lib?.stock ?? ''].join(';');
             });
@@ -892,7 +923,7 @@
                 { type: 'text/csv;charset=utf-8;' }
             );
             const url = URL.createObjectURL(blob);
-            const a   = document.createElement('a');
+            const a = document.createElement('a');
             a.href = url; a.download = 'canti_' + ts() + '.csv'; a.click();
             URL.revokeObjectURL(url);
             toast('CSV scaricato');
@@ -914,11 +945,14 @@
         ────────────────────────────────────────── */
         function refreshStats() {
             document.getElementById('stat-total').textContent = songs.length;
-            // Le scorte sono sui foglietti; sommiamo le copie di ogni foglietto
-            const totalStock = foglietti.reduce((a, l) => a + (l.stock || 0), 0);
-            const lowCount   = foglietti.filter(l => (l.stock || 0) <= 2).length;
+            // Fix #5: consideriamo solo foglietti effettivamente collegati ad almeno un canto,
+            // così i foglietti orfani (senza canti) non inquinano le stats.
+            const usedIds = new Set(songs.map(s => s.foglietto_id).filter(Boolean));
+            const activeFogl = foglietti.filter(l => usedIds.has(l.id));
+            const totalStock = activeFogl.reduce((a, l) => a + (l.stock || 0), 0);
+            const lowCount = activeFogl.filter(l => (l.stock || 0) <= 2).length;
             document.getElementById('stat-stock').textContent = totalStock;
-            document.getElementById('stat-low').textContent   = lowCount;
+            document.getElementById('stat-low').textContent = lowCount;
         }
 
         function refreshAssocFilter() {
@@ -980,4 +1014,5 @@
     </script>
 
 </body>
+
 </html>
