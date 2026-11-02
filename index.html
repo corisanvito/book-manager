@@ -567,11 +567,9 @@
                 if (sortCol === 'stock') {
                     va = va === null ? -Infinity : +va;
                     vb = vb === null ? -Infinity : +vb;
-                } else {
-                    va = String(va).toLowerCase();
-                    vb = String(vb).toLowerCase();
+                    return va < vb ? -sortDir : va > vb ? sortDir : 0;
                 }
-                return va < vb ? -sortDir : va > vb ? sortDir : 0;
+                return String(va).localeCompare(String(vb), 'it', { numeric: true, sensitivity: 'base' }) * sortDir;
             });
 
             const tbody = document.getElementById('tbody');
