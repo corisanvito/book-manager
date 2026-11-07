@@ -686,6 +686,59 @@ tr:hover td {
     margin-top: 8px;
 }
 
+/* ── COLUMN TOGGLE ── */
+.col-toggle-wrap {
+    position: relative;
+}
+
+.col-panel {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, .12);
+    padding: 12px 16px;
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 150;
+    min-width: 160px;
+}
+
+.col-panel.open {
+    display: flex;
+}
+
+.col-panel-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.col-panel-item input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+/* Nascondimento colonne via classe sulla tabella */
+table.hide-foglietto .col-booklet,
+table.hide-foglietto #th-booklet_number {
+    display: none;
+}
+
+table.hide-assoc .col-assoc,
+table.hide-assoc #th-assoc {
+    display: none;
+}
+
 /* ── SORT MOBILE (nascosto su desktop) ── */
 .sort-mobile-ctrl {
     display: none;

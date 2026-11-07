@@ -107,6 +107,20 @@
             <select id="filter-assoc" class="btn btn-outline select-filter" onchange="renderTable()">
                 <option value="">Tutte le associazioni</option>
             </select>
+            <div class="col-toggle-wrap">
+                <button class="btn btn-outline btn-sm" id="col-toggle-btn" onclick="toggleColPanel()"
+                    title="Mostra/nascondi colonne">
+                    <i class="fa-solid fa-table-columns"></i><span class="btn-label"> Colonne</span>
+                </button>
+                <div class="col-panel" id="col-panel">
+                    <label class="col-panel-item">
+                        <input type="checkbox" id="col-chk-foglietto" onchange="applyColVis()"> Foglietto
+                    </label>
+                    <label class="col-panel-item">
+                        <input type="checkbox" id="col-chk-assoc" onchange="applyColVis()"> Associazione
+                    </label>
+                </div>
+            </div>
             <select id="mobile-sort" class="btn btn-outline select-filter sort-mobile-ctrl"
                 onchange="applySortMobile()">
                 <option value="title|1">Ordine: Titolo A→Z</option>
@@ -242,6 +256,8 @@
         let fogliettoFromSong = false;
         let sortCol = 'title', sortDir = 1;
         let csvRows = [];
+        let colVis = { foglietto: true, assoc: true };
+        try { Object.assign(colVis, JSON.parse(localStorage.getItem('colVis') || '{}')); } catch { }
 
         /* ──────────────────────────────────────────
            CONFIG / INIT
@@ -685,7 +701,7 @@
                 const stockBtn = '';
 
                 return `<tr>
-                    <td class="col-title cell-title">${esc(s.title)}${(s.booklet_number || s.associated) ? `<div class="mobile-subtitle">${esc(s.booklet_number || '')}${s.booklet_number && s.associated ? ' · ' : ''}${esc(s.associated || '')}</div>` : ''}</td>
+                    <td class="col-title cell-title">${esc(s.title)}${(() => { const p = []; if (s.booklet_number && colVis.foglietto) p.push(esc(s.booklet_number)); if (s.associated && colVis.assoc) p.push(esc(s.associated)); return p.length ? `<div class="mobile-subtitle">${p.join(' · ')}</div>` : ''; })()}</td>
                     <td class="col-booklet cell-muted">${esc(s.booklet_number || '—')}</td>
                     <td class="col-assoc cell-muted">${esc(s.associated || '—')}</td>
                     <td class="col-stock">${stockCell}</td>
@@ -1030,6 +1046,44 @@
             syncMobileSort();
             renderTable();
         };
+
+        /* ──────────────────────────────────────────
+           VISIBILITÀ COLONNE
+        ────────────────────────────────────────── */
+        function applyColVisCSS() {
+            const tbl = document.querySelector('table');
+            if (tbl) {
+                tbl.classList.toggle('hide-foglietto', !colVis.foglietto);
+                tbl.classList.toggle('hide-assoc', !colVis.assoc);
+            }
+            const filterAssoc = document.getElementById('filter-assoc');
+            if (filterAssoc) filterAssoc.style.display = colVis.assoc ? '' : 'none';
+            const chkF = document.getElementById('col-chk-foglietto');
+            const chkA = document.getElementById('col-chk-assoc');
+            if (chkF) chkF.checked = colVis.foglietto;
+            if (chkA) chkA.checked = colVis.assoc;
+        }
+
+        window.applyColVis = function () {
+            colVis.foglietto = document.getElementById('col-chk-foglietto').checked;
+            colVis.assoc = document.getElementById('col-chk-assoc').checked;
+            localStorage.setItem('colVis', JSON.stringify(colVis));
+            applyColVisCSS();
+            renderTable();
+        };
+
+        window.toggleColPanel = function () {
+            document.getElementById('col-panel').classList.toggle('open');
+        };
+
+        document.addEventListener('click', e => {
+            const wrap = document.getElementById('col-toggle-btn')?.closest('.col-toggle-wrap');
+            if (wrap && !wrap.contains(e.target))
+                document.getElementById('col-panel')?.classList.remove('open');
+        });
+
+        // Applica subito la visibilità salvata
+        applyColVisCSS();
 
         window.applySortMobile = function () {
             const val = document.getElementById('mobile-sort').value;
