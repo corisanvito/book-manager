@@ -13,9 +13,7 @@
 
 <body>
 
-    <!-- ════════════════════════════════════════════
-         CONFIG SCREEN
-    ═══════════════════════════════════════════════ -->
+    <!-- CONFIG SCREEN -->
     <div id="config-screen">
         <div class="config-box">
             <h2>Configurazione Firebase</h2>
@@ -49,9 +47,7 @@
         </div>
     </div>
 
-    <!-- ════════════════════════════════════════════
-         APP
-    ═══════════════════════════════════════════════ -->
+    <!-- APP -->
     <header>
         <div class="logo">Cori San Vito <span>/ Foglietti</span></div>
         <div class="header-actions">
@@ -200,9 +196,7 @@
     <!-- ── TOAST ── -->
     <div id="toast"></div>
 
-    <!-- ════════════════════════════════════════════
-         FIREBASE SDK
-    ═══════════════════════════════════════════════ -->
+    <!-- FIREBASE SDK -->
     <script type="module">
         import { initializeApp, getApps, getApp, deleteApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
         import {
@@ -210,7 +204,7 @@
             deleteDoc, writeBatch, deleteField
         } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-        /* ──────────────────────────────────────────
+        /*
            STATE
            - songs     : { id, title, foglietto_id }
            - foglietti : { id, number, associated, stock }
@@ -219,7 +213,7 @@
            La tabella canti mostra la scorta del foglietto su ogni riga:
            è solo una visualizzazione, il conteggio in alto somma i foglietti
            una sola volta.
-        ────────────────────────────────────────── */
+        */
         let db;
         let songs = [];
         let foglietti = [];
@@ -229,9 +223,7 @@
         let sortCol = 'title', sortDir = 1;
         let csvRows = [];
 
-        /* ──────────────────────────────────────────
-           CONFIG / INIT
-        ────────────────────────────────────────── */
+        // CONFIG / INIT
         window.saveConfig = function () {
             const cfg = {
                 apiKey: document.getElementById('cfg-apiKey').value.trim(),
@@ -266,9 +258,7 @@
             initFirebase(cfg);
         }
 
-        /* ──────────────────────────────────────────
-           CARICAMENTO
-        ────────────────────────────────────────── */
+        // CARICAMENTO
         async function loadAll() {
             showState('loading');
             try {
@@ -289,9 +279,7 @@
             }
         }
 
-        /* ──────────────────────────────────────────
-           MIGRAZIONE
-        ────────────────────────────────────────── */
+        // MIGRAZIONE
         async function migrateIfNeeded() {
             /* ── Scenario B: rinomina libretti → foglietti ── */
             const songsWithOldRef = songs.filter(s => s.libretto_id !== undefined);
@@ -416,9 +404,7 @@
             toast(`Migrazione completata: ${libMap.size} fogliett${libMap.size === 1 ? 'o creato' : 'i creati'}.`, 4000);
         }
 
-        /* ──────────────────────────────────────────
-           CANTI – CRUD
-        ────────────────────────────────────────── */
+        // CANTI – CRUD
         window.saveSong = async function () {
             const title = document.getElementById('f-title').value.trim();
             const foglietto_id = document.getElementById('f-foglietto').value || null;
@@ -463,9 +449,7 @@
             }
         };
 
-        /* ──────────────────────────────────────────
-           FOGLIETTI – CRUD
-        ────────────────────────────────────────── */
+        // FOGLIETTI – CRUD
         window.saveFoglietto = async function () {
             const number = document.getElementById('fl-number').value.trim();
             const associated = document.getElementById('fl-assoc').value.trim();
@@ -528,6 +512,12 @@
             }
         };
 
+        window.adjustStock = function (librId, delta) {
+            const lib = foglietti.find(l => l.id === librId);
+            if (!lib) return;
+            saveFogliettoStock(librId, Math.max(0, (lib.stock || 0) + delta));
+        };
+
         window.saveFogliettoStock = async function (librId, val) {
             const stock = Math.max(0, parseInt(val) || 0);
             try {
@@ -543,12 +533,11 @@
             }
         };
 
-        /* ──────────────────────────────────────────
-           RENDER – TABELLA CANTI
+        /* RENDER – TABELLA CANTI
            Una riga per canto. La scorta mostrata è quella del foglietto
            collegato, quindi può ripetersi su più righe: è solo una
            visualizzazione, il conteggio reale è per foglietto.
-        ────────────────────────────────────────── */
+        */
         window.renderTable = function () {
             const q = document.getElementById('search').value.toLowerCase();
             const fa = document.getElementById('filter-assoc').value;
@@ -610,12 +599,14 @@
                     : '';
 
                 const stockCell = st !== null
-                    ? `<span class="stock-pill ${cls}" id="stock-display-${s.id}">${stLbl}</span>${sharedBadge}`
+                    ? `<div class="stock-ctrl">
+                        <button class="btn-stock" onclick="adjustStock('${libId}',-1)" title="Diminuisci" ${st <= 0 ? 'disabled' : ''}>−</button>
+                        <span class="stock-pill ${cls}" id="stock-display-${s.id}" onclick="editStock('${s.id}','${libId}',${st})" title="Modifica manuale">${stLbl}</span>${sharedBadge}
+                        <button class="btn-stock" onclick="adjustStock('${libId}',1)" title="Aumenta">+</button>
+                       </div>`
                     : `<span class="muted-dash">—</span>`;
 
-                const stockBtn = libId
-                    ? `<button class="btn btn-ghost btn-sm" onclick="editStock('${s.id}','${libId}',${st ?? 0})" title="Modifica scorta del foglietto"><i class="fa-solid fa-plus-minus"></i></button>`
-                    : '';
+                const stockBtn = '';
 
                 return `<tr>
                     <td class="col-title cell-title">${esc(s.title)}${(s.booklet_number || s.associated) ? `<div class="mobile-subtitle">${esc(s.booklet_number || '')}${s.booklet_number && s.associated ? ' · ' : ''}${esc(s.associated || '')}</div>` : ''}</td>
@@ -650,9 +641,7 @@
             inp.focus(); inp.select();
         };
 
-        /* ──────────────────────────────────────────
-           RENDER – TABELLA FOGLIETTI (modal)
-        ────────────────────────────────────────── */
+        // RENDER – TABELLA FOGLIETTI (modal)
         function renderFogliettiTable() {
             const wrap = document.getElementById('foglietti-table-wrap');
             if (!wrap) return;
@@ -686,11 +675,14 @@
                             <td class="foglietti-td">${esc(l.number)}</td>
                             <td class="foglietti-td foglietti-td-muted">${esc(l.associated || '—')}</td>
                             <td class="foglietti-td-center">
-                                <span class="stock-pill ${cls}" id="lib-stock-modal-${l.id}">${st}</span>
+                                <div class="stock-ctrl">
+                                    <button class="btn-stock" onclick="adjustStock('${l.id}',-1)" title="Diminuisci" ${st <= 0 ? 'disabled' : ''}>−</button>
+                                    <span class="stock-pill ${cls}" id="lib-stock-modal-${l.id}" onclick="editLibStockModal('${l.id}',${st})" title="Modifica manuale">${st}</span>
+                                    <button class="btn-stock" onclick="adjustStock('${l.id}',1)" title="Aumenta">+</button>
+                                </div>
                             </td>
                             <td class="foglietti-td-center foglietti-td-muted">${count}</td>
                             <td class="foglietti-td-actions">
-                                <button class="btn btn-ghost btn-sm" onclick="editLibStockModal('${l.id}',${st})" title="Modifica scorta"><i class="fa-solid fa-plus-minus"></i></button>
                                 <button class="btn btn-ghost btn-sm" onclick="openFogliettoModal('${l.id}',false)" title="Modifica"><i class="fa-solid fa-pencil"></i></button>
                                 <button class="btn btn-ghost btn-sm" onclick="deleteFoglietto('${l.id}')"><i class="fa-solid fa-trash"></i></button>
                             </td>
@@ -718,9 +710,7 @@
             inp.focus(); inp.select();
         };
 
-        /* ──────────────────────────────────────────
-           MODALS – CANTI
-        ────────────────────────────────────────── */
+        // MODALS – CANTI
         function populateFogliettoSelect(selectedId) {
             const sel = document.getElementById('f-foglietto');
             const sorted = [...foglietti].sort((a, b) => {
@@ -761,9 +751,7 @@
             document.getElementById('modal-song').classList.remove('open');
         };
 
-        /* ──────────────────────────────────────────
-           MODALS – FOGLIETTI
-        ────────────────────────────────────────── */
+        // MODALS – FOGLIETTI
         window.openFogliettiModal = () => {
             renderFogliettiTable();
             document.getElementById('modal-foglietti').classList.add('open');
@@ -800,9 +788,7 @@
             fogliettoFromSong = false;
         };
 
-        /* ──────────────────────────────────────────
-           IMPORT CSV
-        ────────────────────────────────────────── */
+        // IMPORT CSV
         window.openImportModal = () => {
             csvRows = [];
             const fileInput = document.getElementById('f-csv');
@@ -925,9 +911,7 @@
             btn.textContent = 'Importa';
         };
 
-        /* ──────────────────────────────────────────
-           EXPORT CSV
-        ────────────────────────────────────────── */
+        // EXPORT CSV
         window.downloadCSV = function () {
             const header = 'title;booklet_number;associated;stock';
             const rows = songs.map(s => {
@@ -949,9 +933,7 @@
             toast('CSV scaricato');
         };
 
-        /* ──────────────────────────────────────────
-           SORT
-        ────────────────────────────────────────── */
+        // SORT
         window.sortBy = function (col) {
             if (sortCol === col) sortDir *= -1;
             else { sortCol = col; sortDir = 1; }
@@ -976,9 +958,7 @@
             if (sel) sel.value = `${sortCol}|${sortDir}`;
         }
 
-        /* ──────────────────────────────────────────
-           STATS & FILTRI
-        ────────────────────────────────────────── */
+        // STATS & FILTRI
         function refreshStats() {
             document.getElementById('stat-total').textContent = songs.length;
             const totalStock = foglietti.reduce((a, l) => a + (l.stock || 0), 0);
@@ -995,9 +975,7 @@
                 opts.map(o => `<option value="${esc(o)}" ${o === cur ? 'selected' : ''}>${esc(o)}</option>`).join('');
         }
 
-        /* ──────────────────────────────────────────
-           TASTIERA – Escape chiude solo il modal più profondo
-        ────────────────────────────────────────── */
+        // TASTIERA – Escape chiude solo il modal più profondo
         document.addEventListener('keydown', e => {
             if (e.key !== 'Escape') return;
             const order = ['modal-foglietto', 'modal-import', 'modal-song', 'modal-foglietti'];
@@ -1007,9 +985,7 @@
             }
         });
 
-        /* ──────────────────────────────────────────
-           HELPERS
-        ────────────────────────────────────────── */
+        // HELPERS
         function showState(state) {
             const el = document.getElementById('table-state');
             if (state === 'loading') {

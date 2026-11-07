@@ -319,6 +319,57 @@ tr:hover td {
     color: var(--muted);
 }
 
+/* ── STOCK +/− CONTROLS ── */
+.stock-ctrl {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-stock {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background .1s, border-color .1s, color .1s;
+    user-select: none;
+}
+
+.btn-stock:hover {
+    background: var(--bg);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.btn-stock:active {
+    background: #eff6ff;
+}
+
+.btn-stock:disabled {
+    opacity: .3;
+    cursor: not-allowed;
+}
+
+.stock-pill {
+    cursor: pointer;
+}
+
+.stock-pill:hover {
+    text-decoration: underline dotted;
+    text-underline-offset: 2px;
+}
+
 /* inline stock edit */
 .stock-input {
     width: 64px;
@@ -753,6 +804,14 @@ tr:hover td {
     .btn-ghost {
         min-height: 38px;
         padding: 8px 10px;
+    }
+
+    /* +/− più grandi su mobile */
+    .btn-stock {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+        border-radius: 8px;
     }
 
     /* input scorta inline */
