@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Book Manager – Cori San Vito</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -92,6 +92,16 @@
             </div>
             <select id="filter-assoc" class="btn btn-outline select-filter" onchange="renderTable()">
                 <option value="">Tutte le associazioni</option>
+            </select>
+            <select id="mobile-sort" class="btn btn-outline select-filter sort-mobile-ctrl"
+                onchange="applySortMobile()">
+                <option value="title|1">Ordine: Titolo A→Z</option>
+                <option value="title|-1">Ordine: Titolo Z→A</option>
+                <option value="booklet_number|1">Ordine: Foglietto ↑</option>
+                <option value="booklet_number|-1">Ordine: Foglietto ↓</option>
+                <option value="stock|1">Ordine: Scorta ↑</option>
+                <option value="stock|-1">Ordine: Scorta ↓</option>
+                <option value="associated|1">Ordine: Associazione A→Z</option>
             </select>
         </div>
 
@@ -608,7 +618,7 @@
                     : '';
 
                 return `<tr>
-                    <td class="col-title cell-title">${esc(s.title)}</td>
+                    <td class="col-title cell-title">${esc(s.title)}${(s.booklet_number || s.associated) ? `<div class="mobile-subtitle">${esc(s.booklet_number || '')}${s.booklet_number && s.associated ? ' · ' : ''}${esc(s.associated || '')}</div>` : ''}</td>
                     <td class="col-booklet cell-muted">${esc(s.booklet_number || '—')}</td>
                     <td class="col-assoc cell-muted">${esc(s.associated || '—')}</td>
                     <td class="col-stock">${stockCell}</td>
@@ -947,8 +957,24 @@
             else { sortCol = col; sortDir = 1; }
             document.querySelectorAll('th').forEach(t => t.classList.remove('sorted'));
             document.getElementById('th-' + col)?.classList.add('sorted');
+            syncMobileSort();
             renderTable();
         };
+
+        window.applySortMobile = function () {
+            const val = document.getElementById('mobile-sort').value;
+            const bar = val.lastIndexOf('|');
+            sortCol = val.slice(0, bar);
+            sortDir = parseInt(val.slice(bar + 1));
+            document.querySelectorAll('th').forEach(t => t.classList.remove('sorted'));
+            document.getElementById('th-' + sortCol)?.classList.add('sorted');
+            renderTable();
+        };
+
+        function syncMobileSort() {
+            const sel = document.getElementById('mobile-sort');
+            if (sel) sel.value = `${sortCol}|${sortDir}`;
+        }
 
         /* ──────────────────────────────────────────
            STATS & FILTRI

@@ -624,28 +624,238 @@ tr:hover td {
     margin-top: 8px;
 }
 
-/* ── RESPONSIVE ── */
-@media (max-width: 600px) {
+/* ── SORT MOBILE (nascosto su desktop) ── */
+.sort-mobile-ctrl {
+    display: none;
+}
 
+/* ── MOBILE SUBTITLE (visibile solo su mobile) ── */
+.mobile-subtitle {
+    display: none;
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 400;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 640px) {
+
+    /* Header: logo in prima riga, pulsanti in seconda */
+    header {
+        height: auto;
+        min-height: 56px;
+        padding: 10px 14px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .header-actions {
+        width: 100%;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .header-actions .btn {
+        flex: 1;
+        min-width: calc(50% - 4px);
+        justify-content: center;
+        font-size: 12px;
+        padding: 9px 6px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Layout principale */
+    main {
+        padding: 14px 12px 80px;
+    }
+
+    /* Toolbar: ricerca, filtro e ordinamento su righe separate */
+    .search-wrap,
+    .select-filter,
+    .sort-mobile-ctrl {
+        width: 100%;
+        flex: 0 0 100%;
+        min-width: 0;
+    }
+
+    .sort-mobile-ctrl {
+        display: block;
+    }
+
+    /* Stats: 3 card in riga unica più compatta */
+    .stats-bar {
+        gap: 8px;
+    }
+
+    .stat {
+        padding: 10px 12px;
+        min-width: 0;
+    }
+
+    .stat-val {
+        font-size: 18px;
+    }
+
+    .stat-lbl {
+        font-size: 10px;
+    }
+
+    /* Tabella canti */
     .col-assoc,
     .col-booklet {
         display: none;
     }
 
     .col-title {
-        width: 50%;
+        width: 55%;
     }
 
     .col-stock {
-        width: 25%;
+        width: 18%;
+        padding-left: 4px;
+        padding-right: 4px;
     }
 
     .col-actions {
-        width: 25%;
+        width: 27%;
+        padding-left: 4px;
+        padding-right: 8px;
     }
 
+    td {
+        padding: 10px 10px;
+    }
+
+    th {
+        padding: 8px 10px;
+    }
+
+    .mobile-subtitle {
+        display: block;
+    }
+
+    /* Touch target minimi (44 px) */
+    .btn {
+        min-height: 42px;
+    }
+
+    .btn-sm {
+        min-height: 38px;
+        padding: 7px 8px;
+    }
+
+    .btn-ghost {
+        min-height: 38px;
+        padding: 8px 10px;
+    }
+
+    /* input scorta inline */
+    .stock-input {
+        width: 56px;
+        font-size: 15px;
+        padding: 6px 6px;
+    }
+
+    /* ---- MODALI come bottom sheet ---- */
+    .overlay {
+        align-items: flex-end;
+    }
+
+    .modal {
+        max-width: 100%;
+        width: 100%;
+        border-radius: 20px 20px 0 0;
+        padding: 24px 18px;
+        padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+        transform: translateY(100%);
+        max-height: 92dvh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .overlay.open .modal {
+        transform: translateY(0);
+    }
+
+    /* Handle visivo (pillola) in cima al bottom sheet */
+    .modal::before {
+        content: '';
+        display: block;
+        width: 36px;
+        height: 4px;
+        background: var(--border);
+        border-radius: 2px;
+        margin: 0 auto 20px;
+    }
+
+    .modal-title {
+        margin-top: 0;
+    }
+
+    /* Modal foglietti: quasi full screen */
     .modal.modal-foglietti {
-        width: 95vw;
-        height: 90vh;
+        width: 100%;
+        max-width: 100%;
+        height: 88dvh;
+        max-height: 88dvh;
+        border-radius: 20px 20px 0 0;
+        overflow: hidden;
+    }
+
+    /* Tabella foglietti nel modal: nascondi colonna associazione */
+    .foglietti-table th:nth-child(2),
+    .foglietti-table td:nth-child(2) {
+        display: none;
+    }
+
+    .foglietti-td,
+    .foglietti-td-center,
+    .foglietti-td-actions {
+        padding: 10px 6px;
+    }
+
+    /* Config screen: scrollabile su schermi piccoli */
+    #config-screen {
+        align-items: flex-start;
+        overflow-y: auto;
+        padding: 16px;
+    }
+
+    .config-box {
+        padding: 28px 20px;
+        margin: 16px auto;
+        border-radius: 12px;
+    }
+
+    .config-box h2 {
+        font-size: 18px;
+    }
+
+    /* Aiuto import: codice va a capo */
+    .modal-help code {
+        word-break: break-all;
+        font-size: 12px;
+    }
+
+    /* Azioni modal: bottoni occupano tutta la riga */
+    .modal-actions {
+        flex-direction: column-reverse;
+        gap: 8px;
+    }
+
+    .modal-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Toast più in alto per evitare l'area gesture */
+    #toast {
+        bottom: calc(24px + env(safe-area-inset-bottom, 0px));
     }
 }
