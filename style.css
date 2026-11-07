@@ -669,6 +669,17 @@ tr:hover td {
     margin-top: 20px;
 }
 
+.config-hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 20px 0 16px;
+}
+
+.config-share p {
+    color: var(--muted);
+    font-size: 13px;
+}
+
 .config-note {
     font-size: 11px;
     color: var(--muted);

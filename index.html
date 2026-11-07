@@ -13,7 +13,9 @@
 
 <body>
 
-    <!-- CONFIG SCREEN -->
+    <!-- ════════════════════════════════════════════
+         CONFIG SCREEN
+    ═══════════════════════════════════════════════ -->
     <div id="config-screen">
         <div class="config-box">
             <h2>Configurazione Firebase</h2>
@@ -44,13 +46,29 @@
             <div class="config-actions">
                 <button class="btn btn-primary btn-block" onclick="saveConfig()">Salva e continua</button>
             </div>
+            <div class="config-share" id="config-share" style="display:none">
+                <hr class="config-hr" />
+                <p style="margin-bottom:10px">Condividi l'accesso con altri senza che debbano inserire le credenziali:
+                </p>
+                <button class="btn btn-outline btn-block" onclick="copyShareLink()">
+                    <i class="fa-solid fa-link"></i> Copia link di accesso diretto
+                </button>
+                <p class="config-note" style="margin-top:8px">Il link contiene la configurazione nell'hash URL — non
+                    viene mai inviato a nessun server.</p>
+            </div>
         </div>
     </div>
 
-    <!-- APP -->
+    <!-- ════════════════════════════════════════════
+         APP
+    ═══════════════════════════════════════════════ -->
     <header>
         <div class="logo">Cori San Vito <span>/ Foglietti</span></div>
         <div class="header-actions">
+            <button class="btn btn-ghost btn-sm" onclick="showConfig()" title="Configurazione Firebase"
+                style="color:var(--muted)">
+                <i class="fa-solid fa-gear"></i>
+            </button>
             <button class="btn btn-outline btn-sm" onclick="openFogliettiModal()">
                 <i class="fa-solid fa-book-open"></i> Foglietti
             </button>
@@ -196,7 +214,9 @@
     <!-- ── TOAST ── -->
     <div id="toast"></div>
 
-    <!-- FIREBASE SDK -->
+    <!-- ════════════════════════════════════════════
+         FIREBASE SDK
+    ═══════════════════════════════════════════════ -->
     <script type="module">
         import { initializeApp, getApps, getApp, deleteApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
         import {
@@ -204,7 +224,7 @@
             deleteDoc, writeBatch, deleteField
         } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-        /*
+        /* ──────────────────────────────────────────
            STATE
            - songs     : { id, title, foglietto_id }
            - foglietti : { id, number, associated, stock }
@@ -213,7 +233,7 @@
            La tabella canti mostra la scorta del foglietto su ogni riga:
            è solo una visualizzazione, il conteggio in alto somma i foglietti
            una sola volta.
-        */
+        ────────────────────────────────────────── */
         let db;
         let songs = [];
         let foglietti = [];
@@ -223,7 +243,9 @@
         let sortCol = 'title', sortDir = 1;
         let csvRows = [];
 
-        // CONFIG / INIT
+        /* ──────────────────────────────────────────
+           CONFIG / INIT
+        ────────────────────────────────────────── */
         window.saveConfig = function () {
             const cfg = {
                 apiKey: document.getElementById('cfg-apiKey').value.trim(),
@@ -233,6 +255,7 @@
             };
             if (!cfg.apiKey || !cfg.projectId) { alert('Inserisci almeno API Key e Project ID.'); return; }
             localStorage.setItem('fbConfig', JSON.stringify(cfg));
+            maybeShowSharePanel();
             initFirebase(cfg);
         };
 
@@ -248,17 +271,63 @@
             }
         }
 
-        const saved = localStorage.getItem('fbConfig');
-        if (saved) {
-            const cfg = JSON.parse(saved);
+        /* ── Legge config dall'hash URL (#cfg=BASE64) ── */
+        function tryHashConfig() {
+            const h = location.hash;
+            if (!h.startsWith('#cfg=')) return null;
+            try { return JSON.parse(atob(decodeURIComponent(h.slice(5)))); } catch { return null; }
+        }
+
+        function fillConfigForm(cfg) {
             document.getElementById('cfg-apiKey').value = cfg.apiKey || '';
             document.getElementById('cfg-authDomain').value = cfg.authDomain || '';
             document.getElementById('cfg-projectId').value = cfg.projectId || '';
             document.getElementById('cfg-appId').value = cfg.appId || '';
-            initFirebase(cfg);
         }
 
-        // CARICAMENTO
+        /* Rende visibile il pannello "Copia link" se c'è già una config salvata */
+        function maybeShowSharePanel() {
+            if (localStorage.getItem('fbConfig'))
+                document.getElementById('config-share').style.display = 'block';
+        }
+
+        window.copyShareLink = function () {
+            const raw = localStorage.getItem('fbConfig');
+            if (!raw) { alert('Salva prima la configurazione.'); return; }
+            const url = location.origin + location.pathname + '#cfg=' + encodeURIComponent(btoa(raw));
+            if (navigator.clipboard?.writeText) {
+                navigator.clipboard.writeText(url).then(() => toast('Link copiato negli appunti!', 3000));
+            } else {
+                prompt('Copia questo link:', url);
+            }
+        };
+
+        window.showConfig = function () {
+            maybeShowSharePanel();
+            document.getElementById('config-screen').style.display = 'flex';
+        };
+
+        /* ── Avvio ── */
+        const hashCfg = tryHashConfig();
+        const savedRaw = localStorage.getItem('fbConfig');
+
+        if (hashCfg) {
+            /* Link diretto: salva e accedi senza mostrare la schermata */
+            localStorage.setItem('fbConfig', JSON.stringify(hashCfg));
+            fillConfigForm(hashCfg);
+            history.replaceState(null, '', location.pathname); // rimuove l'hash dall'URL
+            initFirebase(hashCfg);
+        } else if (savedRaw) {
+            /* Config già salvata in localStorage */
+            const cfg = JSON.parse(savedRaw);
+            fillConfigForm(cfg);
+            initFirebase(cfg);
+        }
+        /* altrimenti rimane visibile la schermata di configurazione */
+
+        /* ──────────────────────────────────────────
+           CARICAMENTO
+        ────────────────────────────────────────── */
         async function loadAll() {
             showState('loading');
             try {
@@ -279,7 +348,9 @@
             }
         }
 
-        // MIGRAZIONE
+        /* ──────────────────────────────────────────
+           MIGRAZIONE
+        ────────────────────────────────────────── */
         async function migrateIfNeeded() {
             /* ── Scenario B: rinomina libretti → foglietti ── */
             const songsWithOldRef = songs.filter(s => s.libretto_id !== undefined);
@@ -404,7 +475,9 @@
             toast(`Migrazione completata: ${libMap.size} fogliett${libMap.size === 1 ? 'o creato' : 'i creati'}.`, 4000);
         }
 
-        // CANTI – CRUD
+        /* ──────────────────────────────────────────
+           CANTI – CRUD
+        ────────────────────────────────────────── */
         window.saveSong = async function () {
             const title = document.getElementById('f-title').value.trim();
             const foglietto_id = document.getElementById('f-foglietto').value || null;
@@ -449,7 +522,9 @@
             }
         };
 
-        // FOGLIETTI – CRUD
+        /* ──────────────────────────────────────────
+           FOGLIETTI – CRUD
+        ────────────────────────────────────────── */
         window.saveFoglietto = async function () {
             const number = document.getElementById('fl-number').value.trim();
             const associated = document.getElementById('fl-assoc').value.trim();
@@ -533,11 +608,12 @@
             }
         };
 
-        /* RENDER – TABELLA CANTI
+        /* ──────────────────────────────────────────
+           RENDER – TABELLA CANTI
            Una riga per canto. La scorta mostrata è quella del foglietto
            collegato, quindi può ripetersi su più righe: è solo una
            visualizzazione, il conteggio reale è per foglietto.
-        */
+        ────────────────────────────────────────── */
         window.renderTable = function () {
             const q = document.getElementById('search').value.toLowerCase();
             const fa = document.getElementById('filter-assoc').value;
@@ -641,7 +717,9 @@
             inp.focus(); inp.select();
         };
 
-        // RENDER – TABELLA FOGLIETTI (modal)
+        /* ──────────────────────────────────────────
+           RENDER – TABELLA FOGLIETTI (modal)
+        ────────────────────────────────────────── */
         function renderFogliettiTable() {
             const wrap = document.getElementById('foglietti-table-wrap');
             if (!wrap) return;
@@ -710,7 +788,9 @@
             inp.focus(); inp.select();
         };
 
-        // MODALS – CANTI
+        /* ──────────────────────────────────────────
+           MODALS – CANTI
+        ────────────────────────────────────────── */
         function populateFogliettoSelect(selectedId) {
             const sel = document.getElementById('f-foglietto');
             const sorted = [...foglietti].sort((a, b) => {
@@ -751,7 +831,9 @@
             document.getElementById('modal-song').classList.remove('open');
         };
 
-        // MODALS – FOGLIETTI
+        /* ──────────────────────────────────────────
+           MODALS – FOGLIETTI
+        ────────────────────────────────────────── */
         window.openFogliettiModal = () => {
             renderFogliettiTable();
             document.getElementById('modal-foglietti').classList.add('open');
@@ -788,7 +870,9 @@
             fogliettoFromSong = false;
         };
 
-        // IMPORT CSV
+        /* ──────────────────────────────────────────
+           IMPORT CSV
+        ────────────────────────────────────────── */
         window.openImportModal = () => {
             csvRows = [];
             const fileInput = document.getElementById('f-csv');
@@ -911,7 +995,9 @@
             btn.textContent = 'Importa';
         };
 
-        // EXPORT CSV
+        /* ──────────────────────────────────────────
+           EXPORT CSV
+        ────────────────────────────────────────── */
         window.downloadCSV = function () {
             const header = 'title;booklet_number;associated;stock';
             const rows = songs.map(s => {
@@ -933,7 +1019,9 @@
             toast('CSV scaricato');
         };
 
-        // SORT
+        /* ──────────────────────────────────────────
+           SORT
+        ────────────────────────────────────────── */
         window.sortBy = function (col) {
             if (sortCol === col) sortDir *= -1;
             else { sortCol = col; sortDir = 1; }
@@ -958,7 +1046,9 @@
             if (sel) sel.value = `${sortCol}|${sortDir}`;
         }
 
-        // STATS & FILTRI
+        /* ──────────────────────────────────────────
+           STATS & FILTRI
+        ────────────────────────────────────────── */
         function refreshStats() {
             document.getElementById('stat-total').textContent = songs.length;
             const totalStock = foglietti.reduce((a, l) => a + (l.stock || 0), 0);
@@ -975,7 +1065,9 @@
                 opts.map(o => `<option value="${esc(o)}" ${o === cur ? 'selected' : ''}>${esc(o)}</option>`).join('');
         }
 
-        // TASTIERA – Escape chiude solo il modal più profondo
+        /* ──────────────────────────────────────────
+           TASTIERA – Escape chiude solo il modal più profondo
+        ────────────────────────────────────────── */
         document.addEventListener('keydown', e => {
             if (e.key !== 'Escape') return;
             const order = ['modal-foglietto', 'modal-import', 'modal-song', 'modal-foglietti'];
@@ -985,7 +1077,9 @@
             }
         });
 
-        // HELPERS
+        /* ──────────────────────────────────────────
+           HELPERS
+        ────────────────────────────────────────── */
         function showState(state) {
             const el = document.getElementById('table-state');
             if (state === 'loading') {
