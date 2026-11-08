@@ -658,9 +658,9 @@
                 if (sortCol === 'stock') {
                     va = va === null ? -Infinity : +va;
                     vb = vb === null ? -Infinity : +vb;
-                    return va < vb ? -sortDir : va > vb ? sortDir : 0;
+                    return (va < vb ? -1 : va > vb ? 1 : 0) * sortDir;
                 }
-                return String(va).localeCompare(String(vb), 'it', { numeric: true, sensitivity: 'base' }) * sortDir;
+                return naturalCompare(va, vb) * sortDir;
             });
 
             const tbody = document.getElementById('tbody');
@@ -745,9 +745,7 @@
                 return;
             }
 
-            const sorted = [...foglietti].sort((a, b) =>
-                String(a.number).localeCompare(String(b.number), 'it')
-            );
+            const sorted = [...foglietti].sort((a, b) => naturalCompare(a.number, b.number));
 
             wrap.innerHTML = `
             <table class="foglietti-table">
@@ -810,9 +808,9 @@
         function populateFogliettoSelect(selectedId) {
             const sel = document.getElementById('f-foglietto');
             const sorted = [...foglietti].sort((a, b) => {
-                const c = String(a.number).localeCompare(String(b.number), 'it');
+                const c = naturalCompare(a.number, b.number);
                 if (c !== 0) return c;
-                return String(a.associated || '').localeCompare(String(b.associated || ''), 'it');
+                return naturalCompare(a.associated || '', b.associated || '');
             });
             sel.innerHTML = '<option value="">— Nessun foglietto —</option>' +
                 sorted.map(l =>
@@ -1155,6 +1153,20 @@
             clearTimeout(toastTimer);
             toastTimer = setTimeout(() => el.classList.remove('show'), dur);
         };
+
+        /* Natural sort: "1" < "2" < "11" < "100", "L1" < "L2" < "L10" */
+        function naturalCompare(a, b) {
+            const re = /(\d+)|(\D+)/g;
+            const pa = String(a ?? '').match(re) || [];
+            const pb = String(b ?? '').match(re) || [];
+            for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+                const ca = pa[i] ?? '', cb = pb[i] ?? '';
+                const na = parseInt(ca, 10), nb = parseInt(cb, 10);
+                if (!isNaN(na) && !isNaN(nb)) { if (na !== nb) return na - nb; }
+                else { const c = ca.localeCompare(cb, 'it', { sensitivity: 'base' }); if (c !== 0) return c; }
+            }
+            return 0;
+        }
 
         function esc(s) {
             return String(s ?? '')
