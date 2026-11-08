@@ -125,8 +125,8 @@
                 onchange="applySortMobile()">
                 <option value="title|1">Ordine: Titolo A→Z</option>
                 <option value="title|-1">Ordine: Titolo Z→A</option>
-                <option value="booklet_number|1">Ordine: Foglietto ↑</option>
-                <option value="booklet_number|-1">Ordine: Foglietto ↓</option>
+                <option value="foglietto_number|1">Ordine: Foglietto ↑</option>
+                <option value="foglietto_number|-1">Ordine: Foglietto ↓</option>
                 <option value="stock|1">Ordine: Scorta ↑</option>
                 <option value="stock|-1">Ordine: Scorta ↓</option>
                 <option value="associated|1">Ordine: Associazione A→Z</option>
@@ -138,7 +138,8 @@
                 <thead>
                     <tr>
                         <th class="col-title" onclick="sortBy('title')" id="th-title">Titolo</th>
-                        <th class="col-booklet" onclick="sortBy('booklet_number')" id="th-booklet_number">Foglietto</th>
+                        <th class="col-booklet" onclick="sortBy('foglietto_number')" id="th-foglietto_number">Foglietto
+                        </th>
                         <th class="col-assoc" onclick="sortBy('associated')" id="th-assoc">Associazione</th>
                         <th class="col-stock" onclick="sortBy('stock')" id="th-stock">Scorta</th>
                         <th class="col-actions"></th>
@@ -165,6 +166,16 @@
                     </select>
                     <button class="btn btn-outline btn-sm" onclick="openFogliettoModalFromSong()" type="button">+
                         Nuovo</button>
+                </div>
+            </div>
+            <div class="field-row">
+                <div class="field field-grow">
+                    <label>Libretto / Associazione</label>
+                    <input id="f-assoc" type="text" placeholder="es. Assemblea" />
+                </div>
+                <div class="field field-narrow">
+                    <label>N° / Pagina</label>
+                    <input id="f-booklet-num" type="text" placeholder="es. 23" />
                 </div>
             </div>
             <div class="modal-actions">
@@ -196,7 +207,6 @@
                 <label>Numero / Nome *</label>
                 <input id="fl-number" type="text" placeholder="es. L01 oppure «Avvento 2024»" />
             </div>
-            <div class="field"><label>Associazione</label><input id="fl-assoc" type="text" /></div>
             <div class="field"><label>Scorta</label><input id="fl-stock" type="number" min="0" value="0" /></div>
             <div class="modal-actions">
                 <button class="btn btn-outline" onclick="closeFogliettoModal()">Annulla</button>
@@ -497,19 +507,21 @@
         window.saveSong = async function () {
             const title = document.getElementById('f-title').value.trim();
             const foglietto_id = document.getElementById('f-foglietto').value || null;
+            const associated = document.getElementById('f-assoc').value.trim();
+            const booklet_number = document.getElementById('f-booklet-num').value.trim();
             if (!title) { alert('Il titolo è obbligatorio.'); return; }
 
             const btn = document.getElementById('btn-save-song');
             btn.disabled = true;
             try {
                 if (editingId) {
-                    await updateDoc(doc(db, 'canti', editingId), { title, foglietto_id });
+                    await updateDoc(doc(db, 'canti', editingId), { title, foglietto_id, associated, booklet_number });
                     const i = songs.findIndex(s => s.id === editingId);
-                    if (i >= 0) songs[i] = { ...songs[i], title, foglietto_id };
+                    if (i >= 0) songs[i] = { ...songs[i], title, foglietto_id, associated, booklet_number };
                     toast('Canto aggiornato');
                 } else {
-                    const ref = await addDoc(collection(db, 'canti'), { title, foglietto_id });
-                    songs.push({ id: ref.id, title, foglietto_id });
+                    const ref = await addDoc(collection(db, 'canti'), { title, foglietto_id, associated, booklet_number });
+                    songs.push({ id: ref.id, title, foglietto_id, associated, booklet_number });
                     toast('Canto aggiunto');
                 }
                 closeSongModal();
@@ -543,7 +555,6 @@
         ────────────────────────────────────────── */
         window.saveFoglietto = async function () {
             const number = document.getElementById('fl-number').value.trim();
-            const associated = document.getElementById('fl-assoc').value.trim();
             const stock = parseInt(document.getElementById('fl-stock').value) || 0;
             if (!number) { alert('Il numero/nome del foglietto è obbligatorio.'); return; }
 
@@ -551,13 +562,13 @@
             btn.disabled = true;
             try {
                 if (editingFogliettoId) {
-                    await updateDoc(doc(db, 'foglietti', editingFogliettoId), { number, associated, stock });
+                    await updateDoc(doc(db, 'foglietti', editingFogliettoId), { number, stock });
                     const i = foglietti.findIndex(l => l.id === editingFogliettoId);
-                    if (i >= 0) foglietti[i] = { id: editingFogliettoId, number, associated, stock };
+                    if (i >= 0) foglietti[i] = { ...foglietti[i], number, stock };
                     toast('Foglietto aggiornato');
                 } else {
-                    const ref = await addDoc(collection(db, 'foglietti'), { number, associated, stock });
-                    foglietti.push({ id: ref.id, number, associated, stock });
+                    const ref = await addDoc(collection(db, 'foglietti'), { number, stock });
+                    foglietti.push({ id: ref.id, number, stock });
                     toast('Foglietto aggiunto');
                     if (fogliettoFromSong) populateFogliettoSelect(ref.id);
                 }
@@ -638,8 +649,8 @@
                 const lib = foglietti.find(l => l.id === s.foglietto_id) || null;
                 return {
                     ...s,
-                    booklet_number: lib?.number ?? '',
-                    associated: lib?.associated ?? '',
+                    foglietto_number: lib?.number ?? '',
+                    // associated e booklet_number vengono direttamente dal canto (s.associated, s.booklet_number)
                     stock: lib?.stock ?? null,
                     foglietto: lib,
                 };
@@ -647,8 +658,9 @@
 
             const filtered = enriched.filter(s => {
                 const matchQ = !q || s.title.toLowerCase().includes(q)
-                    || s.booklet_number.toLowerCase().includes(q)
-                    || s.associated.toLowerCase().includes(q);
+                    || s.foglietto_number.toLowerCase().includes(q)
+                    || (s.associated || '').toLowerCase().includes(q)
+                    || (s.booklet_number || '').toLowerCase().includes(q);
                 const matchAssoc = !fa || s.associated === fa;
                 return matchQ && matchAssoc;
             });
@@ -701,9 +713,9 @@
                 const stockBtn = '';
 
                 return `<tr>
-                    <td class="col-title cell-title">${esc(s.title)}${(() => { const p = []; if (s.booklet_number && colVis.foglietto) p.push(esc(s.booklet_number)); if (s.associated && colVis.assoc) p.push(esc(s.associated)); return p.length ? `<div class="mobile-subtitle">${p.join(' · ')}</div>` : ''; })()}</td>
-                    <td class="col-booklet cell-muted">${esc(s.booklet_number || '—')}</td>
-                    <td class="col-assoc cell-muted">${esc(s.associated || '—')}</td>
+                    <td class="col-title cell-title">${esc(s.title)}${(() => { const p = []; if (s.foglietto_number && colVis.foglietto) p.push(esc(s.foglietto_number)); if (colVis.assoc) { const a = [s.associated, s.booklet_number].filter(Boolean).map(esc).join(' / '); if (a) p.push(a); } return p.length ? `<div class="mobile-subtitle">${p.join(' · ')}</div>` : ''; })()}</td>
+                    <td class="col-booklet cell-muted">${esc(s.foglietto_number || '—')}</td>
+                    <td class="col-assoc cell-muted">${(() => { const a = s.associated, n = s.booklet_number; if (!a && !n) return '<span class="muted-dash">—</span>'; if (a && n) return `${esc(a)} <span class="ref-num">/ ${esc(n)}</span>`; return esc(a || n); })()}</td>
                     <td class="col-stock">${stockCell}</td>
                     <td class="col-actions">
                         ${stockBtn}
@@ -824,6 +836,8 @@
             editingId = null;
             document.getElementById('modal-song-title').textContent = 'Aggiungi canto';
             document.getElementById('f-title').value = '';
+            document.getElementById('f-assoc').value = '';
+            document.getElementById('f-booklet-num').value = '';
             populateFogliettoSelect(null);
             document.getElementById('modal-song').classList.add('open');
             document.getElementById('f-title').focus();
@@ -835,6 +849,8 @@
             editingId = id;
             document.getElementById('modal-song-title').textContent = 'Modifica canto';
             document.getElementById('f-title').value = s.title || '';
+            document.getElementById('f-assoc').value = s.associated || '';
+            document.getElementById('f-booklet-num').value = s.booklet_number || '';
             populateFogliettoSelect(s.foglietto_id || null);
             document.getElementById('modal-song').classList.add('open');
             document.getElementById('f-title').focus();
@@ -865,11 +881,9 @@
             if (id) {
                 const l = foglietti.find(l => l.id === id);
                 document.getElementById('fl-number').value = l?.number || '';
-                document.getElementById('fl-assoc').value = l?.associated || '';
                 document.getElementById('fl-stock').value = l?.stock ?? 0;
             } else {
                 document.getElementById('fl-number').value = '';
-                document.getElementById('fl-assoc').value = '';
                 document.getElementById('fl-stock').value = 0;
             }
             document.getElementById('modal-foglietto').classList.add('open');
@@ -1112,7 +1126,7 @@
         function refreshAssocFilter() {
             const sel = document.getElementById('filter-assoc');
             const cur = sel.value;
-            const opts = [...new Set(foglietti.map(l => l.associated).filter(Boolean))].sort();
+            const opts = [...new Set(songs.map(s => s.associated).filter(Boolean))].sort();
             sel.innerHTML = '<option value="">Tutte le associazioni</option>' +
                 opts.map(o => `<option value="${esc(o)}" ${o === cur ? 'selected' : ''}>${esc(o)}</option>`).join('');
         }
