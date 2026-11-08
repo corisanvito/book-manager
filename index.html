@@ -101,12 +101,8 @@
                     <circle cx="11" cy="11" r="8" />
                     <line x1="21" y1="21" x2="16.65" y2="16.65" />
                 </svg>
-                <input id="search" type="search" placeholder="Cerca per titolo, foglietto o associazione…"
-                    oninput="renderTable()" />
+                <input id="search" type="search" placeholder="Cerca per titolo o foglietto…" oninput="renderTable()" />
             </div>
-            <select id="filter-assoc" class="btn btn-outline select-filter" onchange="renderTable()">
-                <option value="">Tutte le associazioni</option>
-            </select>
             <div class="col-toggle-wrap">
                 <button class="btn btn-outline btn-sm" id="col-toggle-btn" onclick="toggleColPanel()"
                     title="Mostra/nascondi colonne">
@@ -116,20 +112,17 @@
                     <label class="col-panel-item">
                         <input type="checkbox" id="col-chk-foglietto" onchange="applyColVis()"> Foglietto
                     </label>
-                    <label class="col-panel-item">
-                        <input type="checkbox" id="col-chk-assoc" onchange="applyColVis()"> Associazione
-                    </label>
+
                 </div>
             </div>
             <select id="mobile-sort" class="btn btn-outline select-filter sort-mobile-ctrl"
                 onchange="applySortMobile()">
                 <option value="title|1">Ordine: Titolo A→Z</option>
                 <option value="title|-1">Ordine: Titolo Z→A</option>
-                <option value="foglietto_number|1">Ordine: Foglietto ↑</option>
-                <option value="foglietto_number|-1">Ordine: Foglietto ↓</option>
+                <option value="booklet_number|1">Ordine: Foglietto ↑</option>
+                <option value="booklet_number|-1">Ordine: Foglietto ↓</option>
                 <option value="stock|1">Ordine: Scorta ↑</option>
                 <option value="stock|-1">Ordine: Scorta ↓</option>
-                <option value="associated|1">Ordine: Associazione A→Z</option>
             </select>
         </div>
 
@@ -138,9 +131,7 @@
                 <thead>
                     <tr>
                         <th class="col-title" onclick="sortBy('title')" id="th-title">Titolo</th>
-                        <th class="col-booklet" onclick="sortBy('foglietto_number')" id="th-foglietto_number">Foglietto
-                        </th>
-                        <th class="col-assoc" onclick="sortBy('associated')" id="th-assoc">Associazione</th>
+                        <th class="col-booklet" onclick="sortBy('booklet_number')" id="th-booklet_number">Foglietto</th>
                         <th class="col-stock" onclick="sortBy('stock')" id="th-stock">Scorta</th>
                         <th class="col-actions"></th>
                     </tr>
@@ -166,16 +157,6 @@
                     </select>
                     <button class="btn btn-outline btn-sm" onclick="openFogliettoModalFromSong()" type="button">+
                         Nuovo</button>
-                </div>
-            </div>
-            <div class="field-row">
-                <div class="field field-grow">
-                    <label>Libretto / Associazione</label>
-                    <input id="f-assoc" type="text" placeholder="es. Assemblea" />
-                </div>
-                <div class="field field-narrow">
-                    <label>N° / Pagina</label>
-                    <input id="f-booklet-num" type="text" placeholder="es. 23" />
                 </div>
             </div>
             <div class="modal-actions">
@@ -221,8 +202,8 @@
             <div class="modal-title">Importa CSV</div>
             <p class="modal-help">
                 Il CSV deve avere il separatore <code>;</code> e le colonne:<br>
-                <code>title; booklet_number; associated; stock</code><br><br>
-                Per ogni combinazione unica di <em>booklet_number + associated</em> viene creato
+                <code>title; booklet_number; stock</code><br><br>
+                Per ogni <em>booklet_number</em> unico viene creato
                 (o riutilizzato) un foglietto. <strong>I canti già esistenti vengono saltati</strong>
                 (confronto per titolo).
             </p>
@@ -266,7 +247,7 @@
         let fogliettoFromSong = false;
         let sortCol = 'title', sortDir = 1;
         let csvRows = [];
-        let colVis = { foglietto: true, assoc: true };
+        let colVis = { foglietto: true };
         try { Object.assign(colVis, JSON.parse(localStorage.getItem('colVis') || '{}')); } catch { }
 
         /* ──────────────────────────────────────────
@@ -365,7 +346,6 @@
                 songs = cantiSnap.docs.map(d => ({ id: d.id, ...d.data() }));
                 await migrateIfNeeded();
                 refreshStats();
-                refreshAssocFilter();
                 renderTable();
                 showState('');
             } catch (e) {
@@ -461,12 +441,11 @@
 
             const libMap = new Map();
             for (const s of oldSongs) {
-                if (!s.booklet_number && !s.associated) continue;
-                const key = `${s.booklet_number ?? ''}|||${s.associated ?? ''}`;
+                if (!s.booklet_number) continue;
+                const key = s.booklet_number ?? '';
                 if (!libMap.has(key)) {
                     libMap.set(key, {
                         number: s.booklet_number || '(senza numero)',
-                        associated: s.associated || '',
                         stock: s.stock || 0,
                     });
                 }
@@ -480,10 +459,9 @@
             for (let i = 0; i < oldSongs.length; i += 500) {
                 const batch = writeBatch(db);
                 oldSongs.slice(i, i + 500).forEach(s => {
-                    const hasLib = s.booklet_number || s.associated;
-                    const key = `${s.booklet_number ?? ''}|||${s.associated ?? ''}`;
+                    const key = s.booklet_number ?? '';
                     batch.update(doc(db, 'canti', s.id), {
-                        foglietto_id: hasLib ? (libIdMap.get(key) || null) : null,
+                        foglietto_id: s.booklet_number ? (libIdMap.get(key) || null) : null,
                         stock: deleteField(),
                         booklet_number: deleteField(),
                         associated: deleteField(),
@@ -493,10 +471,9 @@
             }
             songs = songs.map(s => {
                 if (s.booklet_number === undefined && s.associated === undefined) return s;
-                const hasLib = s.booklet_number || s.associated;
-                const key = `${s.booklet_number ?? ''}|||${s.associated ?? ''}`;
+                const key = s.booklet_number ?? '';
                 const { stock, booklet_number, associated, ...rest } = s;
-                return { ...rest, foglietto_id: hasLib ? (libIdMap.get(key) || null) : null };
+                return { ...rest, foglietto_id: s.booklet_number ? (libIdMap.get(key) || null) : null };
             });
             toast(`Migrazione completata: ${libMap.size} fogliett${libMap.size === 1 ? 'o creato' : 'i creati'}.`, 4000);
         }
@@ -507,26 +484,23 @@
         window.saveSong = async function () {
             const title = document.getElementById('f-title').value.trim();
             const foglietto_id = document.getElementById('f-foglietto').value || null;
-            const associated = document.getElementById('f-assoc').value.trim();
-            const booklet_number = document.getElementById('f-booklet-num').value.trim();
             if (!title) { alert('Il titolo è obbligatorio.'); return; }
 
             const btn = document.getElementById('btn-save-song');
             btn.disabled = true;
             try {
                 if (editingId) {
-                    await updateDoc(doc(db, 'canti', editingId), { title, foglietto_id, associated, booklet_number });
+                    await updateDoc(doc(db, 'canti', editingId), { title, foglietto_id });
                     const i = songs.findIndex(s => s.id === editingId);
-                    if (i >= 0) songs[i] = { ...songs[i], title, foglietto_id, associated, booklet_number };
+                    if (i >= 0) songs[i] = { ...songs[i], title, foglietto_id };
                     toast('Canto aggiornato');
                 } else {
-                    const ref = await addDoc(collection(db, 'canti'), { title, foglietto_id, associated, booklet_number });
-                    songs.push({ id: ref.id, title, foglietto_id, associated, booklet_number });
+                    const ref = await addDoc(collection(db, 'canti'), { title, foglietto_id });
+                    songs.push({ id: ref.id, title, foglietto_id });
                     toast('Canto aggiunto');
                 }
                 closeSongModal();
                 refreshStats();
-                refreshAssocFilter();
                 renderTable();
             } catch (e) {
                 toast('Errore: ' + e.message, 4000);
@@ -542,7 +516,6 @@
                 await deleteDoc(doc(db, 'canti', id));
                 songs = songs.filter(s => s.id !== id);
                 refreshStats();
-                refreshAssocFilter();
                 renderTable();
                 toast('Canto eliminato');
             } catch (e) {
@@ -564,7 +537,7 @@
                 if (editingFogliettoId) {
                     await updateDoc(doc(db, 'foglietti', editingFogliettoId), { number, stock });
                     const i = foglietti.findIndex(l => l.id === editingFogliettoId);
-                    if (i >= 0) foglietti[i] = { ...foglietti[i], number, stock };
+                    if (i >= 0) foglietti[i] = { id: editingFogliettoId, number, stock };
                     toast('Foglietto aggiornato');
                 } else {
                     const ref = await addDoc(collection(db, 'foglietti'), { number, stock });
@@ -574,7 +547,6 @@
                 }
                 closeFogliettoModal();
                 refreshStats();
-                refreshAssocFilter();
                 renderTable();
                 if (document.getElementById('modal-foglietti').classList.contains('open')) renderFogliettiTable();
             } catch (e) {
@@ -605,7 +577,6 @@
                 await deleteDoc(doc(db, 'foglietti', id));
                 foglietti = foglietti.filter(l => l.id !== id);
                 refreshStats();
-                refreshAssocFilter();
                 renderTable();
                 renderFogliettiTable();
                 toast('Foglietto eliminato');
@@ -643,14 +614,12 @@
         ────────────────────────────────────────── */
         window.renderTable = function () {
             const q = document.getElementById('search').value.toLowerCase();
-            const fa = document.getElementById('filter-assoc').value;
 
             const enriched = songs.map(s => {
                 const lib = foglietti.find(l => l.id === s.foglietto_id) || null;
                 return {
                     ...s,
-                    foglietto_number: lib?.number ?? '',
-                    // associated e booklet_number vengono direttamente dal canto (s.associated, s.booklet_number)
+                    booklet_number: lib?.number ?? '',
                     stock: lib?.stock ?? null,
                     foglietto: lib,
                 };
@@ -658,11 +627,8 @@
 
             const filtered = enriched.filter(s => {
                 const matchQ = !q || s.title.toLowerCase().includes(q)
-                    || s.foglietto_number.toLowerCase().includes(q)
-                    || (s.associated || '').toLowerCase().includes(q)
-                    || (s.booklet_number || '').toLowerCase().includes(q);
-                const matchAssoc = !fa || s.associated === fa;
-                return matchQ && matchAssoc;
+                    || s.booklet_number.toLowerCase().includes(q);
+                return matchQ;
             });
 
             filtered.sort((a, b) => {
@@ -713,9 +679,8 @@
                 const stockBtn = '';
 
                 return `<tr>
-                    <td class="col-title cell-title">${esc(s.title)}${(() => { const p = []; if (s.foglietto_number && colVis.foglietto) p.push(esc(s.foglietto_number)); if (colVis.assoc) { const a = [s.associated, s.booklet_number].filter(Boolean).map(esc).join(' / '); if (a) p.push(a); } return p.length ? `<div class="mobile-subtitle">${p.join(' · ')}</div>` : ''; })()}</td>
-                    <td class="col-booklet cell-muted">${esc(s.foglietto_number || '—')}</td>
-                    <td class="col-assoc cell-muted">${(() => { const a = s.associated, n = s.booklet_number; if (!a && !n) return '<span class="muted-dash">—</span>'; if (a && n) return `${esc(a)} <span class="ref-num">/ ${esc(n)}</span>`; return esc(a || n); })()}</td>
+                    <td class="col-title cell-title">${esc(s.title)}${s.booklet_number && colVis.foglietto ? `<div class="mobile-subtitle">${esc(s.booklet_number)}</div>` : ''}</td>
+                    <td class="col-booklet cell-muted">${esc(s.booklet_number || '—')}</td>
                     <td class="col-stock">${stockCell}</td>
                     <td class="col-actions">
                         ${stockBtn}
@@ -764,7 +729,6 @@
                 <thead>
                     <tr class="foglietti-thead-row">
                         <th class="foglietti-th">N°/Nome</th>
-                        <th class="foglietti-th">Associazione</th>
                         <th class="foglietti-th-center">Scorta</th>
                         <th class="foglietti-th-center">Canti</th>
                         <th class="foglietti-th-actions"></th>
@@ -777,7 +741,6 @@
                 const cls = st === 0 ? 'zero' : st <= 2 ? 'low' : 'ok';
                 return `<tr class="foglietti-row">
                             <td class="foglietti-td">${esc(l.number)}</td>
-                            <td class="foglietti-td foglietti-td-muted">${esc(l.associated || '—')}</td>
                             <td class="foglietti-td-center">
                                 <div class="stock-ctrl">
                                     <button class="btn-stock" onclick="adjustStock('${l.id}',-1)" title="Diminuisci" ${st <= 0 ? 'disabled' : ''}>−</button>
@@ -826,9 +789,7 @@
             });
             sel.innerHTML = '<option value="">— Nessun foglietto —</option>' +
                 sorted.map(l =>
-                    `<option value="${l.id}" ${l.id === selectedId ? 'selected' : ''}>${esc(l.number)}` +
-                    (l.associated ? ` — ${esc(l.associated)}` : '') +
-                    `</option>`
+                    `<option value="${l.id}" ${l.id === selectedId ? 'selected' : ''}>${esc(l.number)}</option>`
                 ).join('');
         }
 
@@ -836,8 +797,6 @@
             editingId = null;
             document.getElementById('modal-song-title').textContent = 'Aggiungi canto';
             document.getElementById('f-title').value = '';
-            document.getElementById('f-assoc').value = '';
-            document.getElementById('f-booklet-num').value = '';
             populateFogliettoSelect(null);
             document.getElementById('modal-song').classList.add('open');
             document.getElementById('f-title').focus();
@@ -849,8 +808,6 @@
             editingId = id;
             document.getElementById('modal-song-title').textContent = 'Modifica canto';
             document.getElementById('f-title').value = s.title || '';
-            document.getElementById('f-assoc').value = s.associated || '';
-            document.getElementById('f-booklet-num').value = s.booklet_number || '';
             populateFogliettoSelect(s.foglietto_id || null);
             document.getElementById('modal-song').classList.add('open');
             document.getElementById('f-title').focus();
@@ -933,7 +890,6 @@
                     const aliases = {
                         title: ['title', 'titolo'],
                         booklet_number: ['booklet_number', 'numero', 'foglietto', 'n° lib', 'n°foglietto'],
-                        associated: ['associated', 'associazione'],
                         stock: ['stock', 'scorta'],
                     };
                     return (aliases[name] || [name]).map(a => headers.indexOf(a)).find(i => i >= 0) ?? -1;
@@ -944,7 +900,6 @@
                     return {
                         title,
                         booklet_number: col('booklet_number') >= 0 ? (cols[col('booklet_number')] || '').trim() : '',
-                        associated: col('associated') >= 0 ? (cols[col('associated')] || '').trim() : '',
                         stock: parseInt(col('stock') >= 0 ? cols[col('stock')] || '0' : '0') || 0,
                     };
                 }).filter(r => r.title);
@@ -973,15 +928,12 @@
             const libKeyMap = new Map();
             const libStockMap = new Map();
             for (const row of toAdd) {
-                if (!row.booklet_number && !row.associated) continue;
-                const key = `${norm(row.booklet_number)}|||${norm(row.associated).toLowerCase()}`;
+                if (!row.booklet_number) continue;
+                const key = norm(row.booklet_number);
                 libStockMap.set(key, row.stock);
             }
             for (const [key, stock] of libStockMap.entries()) {
-                const [booklet_number, associatedLower] = key.split('|||');
-                const existing = foglietti.find(l =>
-                    norm(l.number) === booklet_number && norm(l.associated).toLowerCase() === associatedLower
-                );
+                const existing = foglietti.find(l => norm(l.number) === key);
                 if (existing) {
                     libKeyMap.set(key, existing.id);
                     if ((existing.stock || 0) !== stock) {
@@ -989,14 +941,8 @@
                         existing.stock = stock;
                     }
                 } else {
-                    const associated = toAdd.find(r =>
-                        norm(r.booklet_number) === booklet_number &&
-                        norm(r.associated).toLowerCase() === associatedLower
-                    )?.associated ?? '';
-                    const ref = await addDoc(collection(db, 'foglietti'), {
-                        number: booklet_number, associated, stock,
-                    });
-                    foglietti.push({ id: ref.id, number: booklet_number, associated, stock });
+                    const ref = await addDoc(collection(db, 'foglietti'), { number: key, stock });
+                    foglietti.push({ id: ref.id, number: key, stock });
                     libKeyMap.set(key, ref.id);
                 }
             }
@@ -1005,8 +951,7 @@
                 for (let i = 0; i < toAdd.length; i += 500) {
                     const batch = writeBatch(db);
                     toAdd.slice(i, i + 500).forEach(row => {
-                        const hasLib = row.booklet_number || row.associated;
-                        const key = hasLib ? `${norm(row.booklet_number)}|||${norm(row.associated).toLowerCase()}` : null;
+                        const key = row.booklet_number ? norm(row.booklet_number) : null;
                         const foglietto_id = key ? (libKeyMap.get(key) || null) : null;
                         const ref = doc(collection(db, 'canti'));
                         batch.set(ref, { title: row.title.trim(), foglietto_id });
@@ -1027,14 +972,14 @@
            EXPORT CSV
         ────────────────────────────────────────── */
         window.downloadCSV = function () {
-            const header = 'title;booklet_number;associated;stock';
+            const header = 'title;booklet_number;stock';
             const rows = songs.map(s => {
                 const lib = foglietti.find(l => l.id === s.foglietto_id);
                 const safe = v => {
                     const str = String(v ?? '');
                     return /[;"\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
                 };
-                return [safe(s.title), safe(lib?.number || ''), safe(lib?.associated || ''), lib?.stock ?? ''].join(';');
+                return [safe(s.title), safe(lib?.number || ''), lib?.stock ?? ''].join(';');
             });
             const blob = new Blob(
                 ['\uFEFF' + header + '\n' + rows.join('\n')],
@@ -1066,19 +1011,13 @@
             const tbl = document.querySelector('table');
             if (tbl) {
                 tbl.classList.toggle('hide-foglietto', !colVis.foglietto);
-                tbl.classList.toggle('hide-assoc', !colVis.assoc);
             }
-            const filterAssoc = document.getElementById('filter-assoc');
-            if (filterAssoc) filterAssoc.style.display = colVis.assoc ? '' : 'none';
             const chkF = document.getElementById('col-chk-foglietto');
-            const chkA = document.getElementById('col-chk-assoc');
             if (chkF) chkF.checked = colVis.foglietto;
-            if (chkA) chkA.checked = colVis.assoc;
         }
 
         window.applyColVis = function () {
             colVis.foglietto = document.getElementById('col-chk-foglietto').checked;
-            colVis.assoc = document.getElementById('col-chk-assoc').checked;
             localStorage.setItem('colVis', JSON.stringify(colVis));
             applyColVisCSS();
             renderTable();
@@ -1123,13 +1062,7 @@
             document.getElementById('stat-low').textContent = lowCount;
         }
 
-        function refreshAssocFilter() {
-            const sel = document.getElementById('filter-assoc');
-            const cur = sel.value;
-            const opts = [...new Set(songs.map(s => s.associated).filter(Boolean))].sort();
-            sel.innerHTML = '<option value="">Tutte le associazioni</option>' +
-                opts.map(o => `<option value="${esc(o)}" ${o === cur ? 'selected' : ''}>${esc(o)}</option>`).join('');
-        }
+
 
         /* ──────────────────────────────────────────
            TASTIERA – Escape chiude solo il modal più profondo
